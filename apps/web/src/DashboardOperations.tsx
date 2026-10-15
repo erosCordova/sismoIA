@@ -5,51 +5,49 @@ import { TokenContext, UsuarioContext } from "./AuthGate";
 type Fuente = {
   id: string;
   nombre: string;
-  estado: string;
+  estado_configuracion: string;
   registros: number;
+  recibidos_24h: number;
   ultima_sincronizacion_utc: string | null;
+  latencia_media_horas: number | null;
+  frescura: string;
 };
 
-type DatosFuentes = {
+type FuentesResponse = {
   fuentes: Fuente[];
-  total_fuentes: number;
 };
 
-type DatosAlertas = {
-  alertas: { id: string; estado: string }[];
-};
-
-type ResumenAlertas = {
+type AlertasResponse = {
   pendientes: number;
   aprobadas: number;
-  limitado: boolean;
+  descartadas: number;
 };
 
 function fecha(valor: string | null) {
-  if (!valor) return "Sin registro";
+  if (!valor) return "No registrada";
 
-  const instante = new Date(valor);
+  const d = new Date(valor);
 
-  if (Number.isNaN(instante.getTime())) {
+  if (Number.isNaN(d.getTime())) {
     return "Fecha no disponible";
   }
 
-  return instante.toLocaleString("es-PE", {
+  return d.toLocaleString("es-PE", {
     timeZone: "America/Lima",
     dateStyle: "short",
     timeStyle: "short"
   });
 }
 
+function numero(valor: number) {
+  return valor.toLocaleString("es-PE", {
+    maximumFractionDigits: 2
+  });
+}
+
 export default function DashboardOperations() {
   const token = useContext(TokenContext);
   const usuario = useContext(UsuarioContext);
-
-  const [fuentes, setFuentes] = useState<DatosFuentes | null>(null);
-  const [alertas, setAlertas] = useState<ResumenAlertas | null>(null);
-
-  const [errorFuentes, setErrorFuentes] = useState(false);
-  const [errorAlertas, setErrorAlertas] = useState(false);
 
   const permitido = (permiso: string) =>
     Boolean(
@@ -63,73 +61,68 @@ export default function DashboardOperations() {
   const puedeFuentes = permitido("sources:read");
   const puedeAlertas = permitido("alerts:read");
 
+  const [fuentes, setFuentes] =
+    useState<FuentesResponse | null>(null);
+
+  const [alertas, setAlertas] =
+    useState<AlertasResponse | null>(null);
+
+  const [errorFuentes, setErrorFuentes] = useState(false);
+  const [errorAlertas, setErrorAlertas] = useState(false);
+
   useEffect(() => {
     if (!token) return;
 
     let vigente = true;
 
     async function consultar<T>(ruta: string): Promise<T> {
-      const respuesta = await fetch(`/api/v1${ruta}`, {
+      const r = await fetch(`/api/v1${ruta}`, {
         headers: {
           Authorization: `Bearer ${token}`
         },
         cache: "no-store"
       });
 
-      if (!respuesta.ok) {
-        throw new Error(`HTTP ${respuesta.status}`);
-      }
+      if (!r.ok) throw Error(`HTTP ${r.status}`);
 
-      return respuesta.json() as Promise<T>;
+      return r.json() as Promise<T>;
     }
 
     async function actualizar() {
-      const [respuestaFuentes, respuestaAlertas] =
-        await Promise.allSettled([
-          puedeFuentes
-            ? consultar<DatosFuentes>("/sources")
-            : Promise.resolve(null),
+      if (puedeFuentes) {
+        try {
+          const d = await consultar<FuentesResponse>(
+            "/sources/diagnostics"
+          );
 
-          puedeAlertas
-            ? Promise.all([
-                consultar<DatosAlertas>(
-                  "/alerts?estado=pending&limite=500"
-                ),
-                consultar<DatosAlertas>(
-                  "/alerts?estado=approved&limite=500"
-                )
-              ])
-            : Promise.resolve(null)
-        ]);
-
-      if (!vigente) return;
-
-      if (respuestaFuentes.status === "fulfilled") {
-        setFuentes(respuestaFuentes.value);
-        setErrorFuentes(false);
-      } else {
-        setFuentes(null);
-        setErrorFuentes(true);
+          if (vigente) {
+            setFuentes(d);
+            setErrorFuentes(false);
+          }
+        } catch {
+          if (vigente) {
+            setFuentes(null);
+            setErrorFuentes(true);
+          }
+        }
       }
 
-      if (
-        respuestaAlertas.status === "fulfilled" &&
-        respuestaAlertas.value !== null
-      ) {
-        const [pendientes, aprobadas] = respuestaAlertas.value;
+      if (puedeAlertas) {
+        try {
+          const d = await consultar<AlertasResponse>(
+            "/alerts/summary"
+          );
 
-        setAlertas({
-          pendientes: pendientes.alertas.length,
-          aprobadas: aprobadas.alertas.length,
-          limitado:
-            pendientes.alertas.length === 500 ||
-            aprobadas.alertas.length === 500
-        });
-
-        setErrorAlertas(false);
-      } else if (respuestaAlertas.status === "rejected") {
-        setAlertas(null);
-        setErrorAlertas(true);
+          if (vigente) {
+            setAlertas(d);
+            setErrorAlertas(false);
+          }
+        } catch {
+          if (vigente) {
+            setAlertas(null);
+            setErrorAlertas(true);
+          }
+        }
       }
     }
 
@@ -147,85 +140,83 @@ export default function DashboardOperations() {
     };
   }, [token, puedeFuentes, puedeAlertas]);
 
-  const fuentesActivas = fuentes?.fuentes.filter(
-    f => f.estado.toLowerCase() === "active"
+  const recientes = fuentes?.fuentes.filter(
+    f => f.frescura === "Recepción reciente"
   ).length;
 
-  const valorFuentes = !puedeFuentes
+  const pendientes = !puedeAlertas
+    ? "Sin acceso"
+    : errorAlertas
+      ? "No disponible"
+      : !alertas
+        ? "Consultando..."
+        : numero(alertas.pendientes);
+
+  const aprobadas = !puedeAlertas
+    ? "Sin acceso"
+    : errorAlertas
+      ? "No disponible"
+      : !alertas
+        ? "Consultando..."
+        : numero(alertas.aprobadas);
+
+  const estadoFuentes = !puedeFuentes
     ? "Sin acceso"
     : errorFuentes
       ? "No disponible"
-      : fuentesActivas === undefined
+      : recientes === undefined
         ? "Consultando..."
-        : `${fuentesActivas} de ${fuentes?.total_fuentes ?? 0}`;
-
-  const valorAlertas = !puedeAlertas
-    ? "Sin acceso"
-    : errorAlertas
-      ? "No disponible"
-      : !alertas
-        ? "Consultando..."
-        : `${alertas.limitado ? "≥" : ""}${
-            alertas.pendientes + alertas.aprobadas
-          }`;
-
-  const valorPendientes = !puedeAlertas
-    ? "Sin acceso"
-    : errorAlertas
-      ? "No disponible"
-      : !alertas
-        ? "Consultando..."
-        : `${alertas.pendientes}${
-            alertas.pendientes === 500 ? "+" : ""
-          }`;
+        : `${recientes} / ${fuentes?.fuentes.length ?? 0}`;
 
   return (
     <>
       <div className="dash-status-row">
         <span>
           <Bell size={16} />
-          Alertas activas
+          Alertas pendientes de revisión
         </span>
-        <strong>{valorAlertas}</strong>
+        <strong>{pendientes}</strong>
       </div>
 
       <div className="dash-status-row">
         <span>
           <Bell size={16} />
-          Pendientes de revisión
+          Alertas aprobadas internamente
         </span>
-        <strong>{valorPendientes}</strong>
+        <strong>{aprobadas}</strong>
       </div>
 
       <div className="dash-status-row">
         <span>
           <Radio size={16} />
-          Fuentes configuradas activas
+          Fuentes con recepción reciente
         </span>
-        <strong>{valorFuentes}</strong>
+        <strong>{estadoFuentes}</strong>
       </div>
 
-      {fuentes?.fuentes.map(f => (
+      {puedeFuentes && fuentes?.fuentes.map(f => (
         <div className="dash-source-detail" key={f.id}>
           <div className="dash-source-heading">
             <strong>{f.nombre}</strong>
 
             <span
               className={
-                f.estado.toLowerCase() === "active"
+                f.frescura === "Recepción reciente"
                   ? "dash-source-active"
                   : "dash-source-inactive"
               }
             >
-              {f.estado.toLowerCase() === "active"
-                ? "Activa en configuración"
-                : f.estado}
+              {f.frescura}
             </span>
           </div>
 
           <div className="dash-source-meta">
             <span>
-              {f.registros.toLocaleString("es-PE")} registros
+              {numero(f.registros)} registros
+            </span>
+
+            <span>
+              Recibidos en 24 h: {numero(f.recibidos_24h)}
             </span>
 
             <span>
@@ -233,17 +224,27 @@ export default function DashboardOperations() {
               {fecha(f.ultima_sincronizacion_utc)}
             </span>
           </div>
+
+          <div className="dash-status-row">
+            <span>
+              <Clock3 size={14} />
+              Latencia media registrada
+            </span>
+
+            <strong>
+              {f.latencia_media_horas === null
+                ? "Sin medición"
+                : `${numero(f.latencia_media_horas)} h`}
+            </strong>
+          </div>
         </div>
       ))}
 
-      <div className="dash-status-row">
-        <span>
-          <Clock3 size={16} />
-          Latencia de recepción
-        </span>
-
-        <strong>Sin medición disponible</strong>
-      </div>
+      <p className="dash-operations-note">
+        Los conteos de alertas proceden de PostgreSQL.
+        La recepción reciente no garantiza disponibilidad
+        en vivo del proveedor. La aprobación no implica envío.
+      </p>
     </>
   );
 }

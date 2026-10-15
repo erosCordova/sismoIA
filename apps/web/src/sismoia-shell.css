@@ -1,0 +1,334 @@
+/* SISMOIA - Diseño empresarial alineado con el documento */
+
+.sismo-shell {
+  background: #f4f7fb;
+  color: #193d59;
+}
+
+.sismo-shell .sidebar {
+  background: linear-gradient(180deg, #102d4d, #0b2038);
+  box-shadow: 3px 0 22px #173a5a12;
+}
+
+.sismo-shell .marca {
+  padding: 20px 19px;
+  gap: 12px;
+}
+
+.sismo-brand-icon {
+  width: 41px;
+  height: 41px;
+  display: grid;
+  place-items: center;
+  color: #59e0e4;
+  border: 1px solid #ffffff25;
+  background: #ffffff0e;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.sismo-shell .marca strong {
+  font-size: 20px;
+  letter-spacing: 1px;
+}
+
+.sismo-shell .marca small {
+  font-size: 9px;
+  letter-spacing: 2.1px;
+}
+
+.sismo-shell .buscador {
+  margin: 13px 12px;
+  background: #ffffff0b;
+}
+
+.sismo-shell .grupo {
+  margin-bottom: 14px;
+}
+
+.sismo-shell .grupo h4 {
+  margin: 11px 10px 8px;
+  color: #8aa9c5;
+  font-size: 10px;
+}
+
+.sismo-shell .enlace {
+  gap: 11px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.35;
+  border-radius: 9px;
+}
+
+.sismo-shell .enlace.activo {
+  background: #176b91;
+  box-shadow: inset 3px 0 #55dfe0;
+}
+
+.sismo-shell .enlace:focus-visible {
+  outline: 2px solid #59dfe2;
+  outline-offset: -2px;
+}
+
+.sismo-nav-empty {
+  color: #b0c6d9;
+  padding: 13px;
+  font-size: 12px;
+}
+
+.sismo-sidebar-footer {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 15px 18px !important;
+  font-size: 10px !important;
+}
+
+.sismo-sidebar-pulse {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #53c6d0;
+}
+
+.sismo-shell .contenido {
+  min-width: 0;
+  width: 100%;
+}
+
+.sismo-topbar {
+  min-height: 78px;
+  height: auto;
+  padding: 12px 25px;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 10;
+}
+
+.sismo-topbar-title {
+  min-width: 0;
+}
+
+.sismo-topbar-title > div {
+  display: grid;
+  gap: 3px;
+}
+
+.sismo-topbar-title small {
+  color: #8095a7;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.sismo-topbar-title strong {
+  font-size: 17px;
+  color: #173a57;
+}
+
+.sismo-topbar-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 11px;
+}
+
+.sismo-source-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #eef8fb;
+  border: 1px solid #daebf1;
+  border-radius: 9px;
+  color: #34738d;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.sismo-source-status svg {
+  flex-shrink: 0;
+}
+
+.sismo-shell .cobertura button {
+  min-height: 36px;
+  padding: 8px 11px;
+}
+
+.sismo-user {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  max-width: 220px;
+  padding-left: 11px;
+  border-left: 1px solid #e2eaf1;
+}
+
+.sismo-user-avatar {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: #e8f5fb;
+  color: #1e7899;
+}
+
+.sismo-user > div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.sismo-user strong,
+.sismo-user small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sismo-user strong {
+  color: #25465f;
+  font-size: 11px;
+}
+
+.sismo-user small {
+  color: #8196a6;
+  font-size: 10px;
+}
+
+.sismo-shell main {
+  width: 100%;
+  max-width: 1660px;
+  padding: 22px 25px;
+}
+
+.sismo-disclaimer {
+  margin-top: 24px;
+  padding: 12px 15px;
+  background: #fffbf1;
+  font-size: 11px;
+}
+
+.sismo-return {
+  color: #087eaa;
+  font-weight: 700;
+}
+
+.sismo-sidebar-backdrop {
+  display: none;
+}
+
+.sismo-module-loading {
+  display: grid;
+  gap: 14px;
+  padding: 10px 0;
+  color: #728c9e;
+  font-size: 12px;
+}
+
+.sismo-skeleton {
+  background: linear-gradient(
+    90deg,
+    #e8f0f5 20%,
+    #f8fbfd 45%,
+    #e8f0f5 70%
+  );
+  background-size: 200% 100%;
+  border-radius: 12px;
+  animation: sismo-skeleton-move 1.5s ease-in-out infinite;
+}
+
+.sismo-skeleton-title {
+  height: 58px;
+  width: 45%;
+}
+
+.sismo-skeleton-block {
+  height: 115px;
+}
+
+@keyframes sismo-skeleton-move {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sismo-skeleton {
+    animation: none;
+  }
+}
+
+@media (max-width: 1250px) {
+  .sismo-topbar {
+    gap: 10px;
+  }
+
+  .sismo-source-status {
+    max-width: 200px;
+  }
+}
+
+@media (max-width: 800px) {
+  .sismo-sidebar-backdrop {
+    display: block;
+    position: fixed;
+    z-index: 19;
+    inset: 0;
+    background: #0b253b99;
+    border: 0;
+  }
+
+  .sismo-shell .sidebar {
+    z-index: 20;
+    width: min(285px, 85vw);
+    min-width: 0;
+  }
+
+  .sismo-topbar {
+    padding: 12px 17px;
+  }
+
+  .sismo-shell main {
+    padding: 17px;
+  }
+}
+
+@media (max-width: 650px) {
+  .sismo-topbar {
+    align-items: flex-start;
+  }
+
+  .sismo-topbar-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .sismo-source-status {
+    order: 3;
+    flex: 1 1 100%;
+    max-width: none;
+  }
+
+  .sismo-user {
+    max-width: 180px;
+  }
+}
+
+@media (max-width: 430px) {
+  .sismo-topbar-title strong {
+    font-size: 14px;
+  }
+
+  .sismo-user {
+    max-width: 120px;
+  }
+
+  .sismo-shell .cobertura button {
+    padding: 8px;
+    font-size: 11px;
+  }
+}

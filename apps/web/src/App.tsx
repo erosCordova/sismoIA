@@ -1,7 +1,6 @@
-import { lazy, Suspense } from "react";
-import { useContext } from "react";
-import { UsuarioContext } from "./AuthGate";
-import { useEffect, useState } from "react";
+import {
+  lazy, Suspense, useContext, useEffect, useState
+} from "react";
 import {
   BrowserRouter, NavLink, Link, useLocation
 } from "react-router-dom";
@@ -9,227 +8,461 @@ import {
   Activity, LayoutDashboard, MapPinned, BarChart3,
   Database, BrainCircuit, TrendingUp, SlidersHorizontal,
   Bell, Radio, FileText, Users, ShieldCheck,
-  Globe2, MapPin, Search, Menu, X, ArrowRight,
+  Globe2, MapPin, Search, Menu, X, UserRound,
   type LucideIcon
 } from "lucide-react";
+
+import { TokenContext, UsuarioContext } from "./AuthGate";
+import "./sismoia-shell.css";
 
 type Modulo = {
   nombre: string;
   ruta: string;
   grupo: string;
   icono: LucideIcon;
-  descripcion: string;
+  permiso: string;
 };
 
 const modulos: Modulo[] = [
-  {nombre:"Dashboard",ruta:"/",grupo:"Monitoreo",icono:LayoutDashboard,descripcion:"Resumen ejecutivo de la actividad sísmica"},
-  {nombre:"Eventos sísmicos",ruta:"/eventos",grupo:"Monitoreo",icono:Activity,descripcion:"Registros sísmicos y consultas"},
-  {nombre:"Mapa sísmico",ruta:"/mapa",grupo:"Monitoreo",icono:MapPinned,descripcion:"Visualización geográfica mundial"},
-  {nombre:"Análisis estadístico",ruta:"/analisis",grupo:"Inteligencia artificial",icono:BarChart3,descripcion:"Estadísticas y tendencias históricas"},
-  {nombre:"Preparación de datos",ruta:"/datos",grupo:"Inteligencia artificial",icono:Database,descripcion:"Limpieza y validación de datasets"},
-  {nombre:"Modelos ML",ruta:"/modelos",grupo:"Inteligencia artificial",icono:BrainCircuit,descripcion:"Entrenamiento y evaluación de modelos"},
-  {nombre:"Estimaciones",ruta:"/estimaciones",grupo:"Inteligencia artificial",icono:TrendingUp,descripcion:"Resultados experimentales"},
-  {nombre:"Reglas de alertas",ruta:"/reglas",grupo:"Alertas",icono:SlidersHorizontal,descripcion:"Configuración de reglas y umbrales"},
-  {nombre:"Centro de alertas",ruta:"/alertas",grupo:"Alertas",icono:Bell,descripcion:"Avisos y seguimiento de entregas"},
-  {nombre:"Fuentes de datos",ruta:"/fuentes",grupo:"Administración",icono:Radio,descripcion:"Proveedores y sincronización"},
-  {nombre:"Reportes",ruta:"/reportes",grupo:"Administración",icono:FileText,descripcion:"Generación de informes"},
-  {nombre:"Usuarios y roles",ruta:"/usuarios",grupo:"Administración",icono:Users,descripcion:"Gestión de accesos y permisos"},
-  {nombre:"Auditoría y configuración",ruta:"/auditoria",grupo:"Administración",icono:ShieldCheck,descripcion:"Registro de operaciones y configuración"}
+  {nombre:"Dashboard", ruta:"/", grupo:"Monitoreo", icono:LayoutDashboard, permiso:"dashboard:read"},
+  {nombre:"Eventos sísmicos", ruta:"/eventos", grupo:"Monitoreo", icono:Activity, permiso:"events:read"},
+  {nombre:"Mapa sísmico", ruta:"/mapa", grupo:"Monitoreo", icono:MapPinned, permiso:"map:read"},
+  {nombre:"Análisis estadístico", ruta:"/analisis", grupo:"Monitoreo", icono:BarChart3, permiso:"analytics:read"},
+
+  {nombre:"Preparación de datos", ruta:"/datos", grupo:"Inteligencia artificial", icono:Database, permiso:"datasets:read"},
+  {nombre:"Modelos ML", ruta:"/modelos", grupo:"Inteligencia artificial", icono:BrainCircuit, permiso:"models:read"},
+  {nombre:"Estimaciones", ruta:"/estimaciones", grupo:"Inteligencia artificial", icono:TrendingUp, permiso:"estimates:read"},
+
+  {nombre:"Reglas de alertas", ruta:"/reglas", grupo:"Operaciones", icono:SlidersHorizontal, permiso:"rules:manage"},
+  {nombre:"Centro de alertas", ruta:"/alertas", grupo:"Operaciones", icono:Bell, permiso:"alerts:read"},
+  {nombre:"Fuentes de datos", ruta:"/fuentes", grupo:"Operaciones", icono:Radio, permiso:"sources:read"},
+  {nombre:"Reportes", ruta:"/reportes", grupo:"Operaciones", icono:FileText, permiso:"reports:read"},
+
+  {nombre:"Usuarios y roles", ruta:"/usuarios", grupo:"Administración", icono:Users, permiso:"users:read"},
+  {nombre:"Auditoría y configuración", ruta:"/auditoria", grupo:"Administración", icono:ShieldCheck, permiso:"audit:read"}
 ];
 
 const grupos = [
   "Monitoreo",
   "Inteligencia artificial",
-  "Alertas",
+  "Operaciones",
   "Administración"
 ];
 
-const CatalogWorkspace = lazy(() => import("./CatalogWorkspace"));
 const SismoiaDashboard = lazy(() => import("./SismoiaDashboard"));
-const PreparationWorkspace = lazy(() => import("./PreparationWorkspace"));
+const CatalogWorkspace = lazy(() => import("./CatalogWorkspace"));
 const AnalyticsWorkspace = lazy(() => import("./AnalyticsWorkspace"));
-
+const PreparationWorkspace = lazy(() => import("./PreparationWorkspace"));
 const ModelsWorkspace = lazy(() => import("./ModelsWorkspace"));
 const EstimatesWorkspace = lazy(() => import("./EstimatesWorkspace"));
 const AlertsWorkspace = lazy(() => import("./AlertsWorkspace"));
 const SourcesWorkspace = lazy(() => import("./SourcesWorkspace"));
 const ReportsWorkspace = lazy(() => import("./ReportsWorkspace"));
 const ManagementWorkspace = lazy(() => import("./ManagementWorkspace"));
-const permisoPorRuta: Record<string, string> = {"/": "dashboard:read", "/eventos": "events:read", "/mapa": "map:read", "/analisis": "analytics:read", "/datos": "datasets:read", "/modelos": "models:read", "/estimaciones": "estimates:read", "/reglas": "rules:manage", "/alertas": "alerts:read", "/fuentes": "sources:read", "/reportes": "reports:read", "/usuarios": "users:read", "/auditoria": "audit:read"};
+
+type Diagnostico = {
+  fuentes: {
+    id: string;
+    nombre: string;
+    frescura: string;
+    ultima_recepcion_utc: string | null;
+  }[];
+  calculado_utc: string;
+};
+
+function CargandoModulo() {
+  return (
+    <div className="sismo-module-loading" role="status" aria-label="Cargando módulo">
+      <div className="sismo-skeleton sismo-skeleton-title" />
+      <div className="sismo-skeleton sismo-skeleton-block" />
+      <div className="sismo-skeleton sismo-skeleton-block" />
+      <span>Cargando información...</span>
+    </div>
+  );
+}
 
 function Plataforma() {
-  const [cobertura, setCobertura] = useState("Perú");
-  const [busqueda, setBusqueda] = useState("");
-  const [menuAbierto, setMenuAbierto] = useState(false);
-  const [conexion, setConexion] = useState("Comprobando...");
-  useEffect(() => {
-    fetch("/api/v1/health/database")
-      .then(r => { if (!r.ok) throw Error("API no disponible"); return r.json(); })
-      .then(d => setConexion(d.database === "connected" ? "FastAPI y PostgreSQL conectados" : "Base de datos no disponible"))
-      .catch(() => setConexion("Sin conexión"));
-  }, []);
-
   const location = useLocation();
   const usuario = useContext(UsuarioContext);
-  const puedeVer = (ruta: string) => Boolean(usuario && (usuario.permisos.includes("*") || usuario.permisos.includes(permisoPorRuta[ruta])));
-  const modulo = modulos.find(m => m.ruta === location.pathname);
-  const Icono = modulo?.icono ?? LayoutDashboard;
+  const token = useContext(TokenContext);
+
+  const [peru, setPeru] = useState(true);
+  const [busqueda, setBusqueda] = useState("");
+  const [menuAbierto, setMenuAbierto] = useState(false);
+  const [fuentes, setFuentes] = useState<Diagnostico | null>(null);
+  const [errorFuentes, setErrorFuentes] = useState(false);
+
+  const puede = (permiso: string) =>
+    Boolean(
+      usuario &&
+      (
+        usuario.permisos.includes("*") ||
+        usuario.permisos.includes(permiso)
+      )
+    );
+
+  const puedeFuentes = puede("sources:read");
+
+  const modulo = modulos.find(
+    m => m.ruta === location.pathname
+  );
+
+  const perfil = usuario as unknown as {
+    full_name?: string;
+    nombre?: string;
+    email?: string;
+    roles?: string[];
+  } | null;
+
+  const nombreUsuario =
+    perfil?.full_name ||
+    perfil?.nombre ||
+    perfil?.email ||
+    "Usuario autenticado";
+
+  const rolesUsuario =
+    perfil?.roles?.length
+      ? perfil.roles.join(", ")
+      : "Sesión activa";
+
+  useEffect(() => {
+    setMenuAbierto(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!menuAbierto) return;
+
+    function cerrarConEscape(evento: KeyboardEvent) {
+      if (evento.key === "Escape") {
+        setMenuAbierto(false);
+      }
+    }
+
+    document.addEventListener("keydown", cerrarConEscape);
+
+    return () => {
+      document.removeEventListener(
+        "keydown", cerrarConEscape
+      );
+    };
+  }, [menuAbierto]);
+
+  useEffect(() => {
+    if (!token || !puedeFuentes) {
+      setFuentes(null);
+      setErrorFuentes(false);
+      return;
+    }
+
+    let vigente = true;
+
+    async function actualizar() {
+      try {
+        const respuesta = await fetch(
+          "/api/v1/sources/diagnostics",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`
+            },
+            cache: "no-store"
+          }
+        );
+
+        if (!respuesta.ok) {
+          throw new Error(
+            `HTTP ${respuesta.status}`
+          );
+        }
+
+        const datos: Diagnostico = await respuesta.json();
+
+        if (vigente) {
+          setFuentes(datos);
+          setErrorFuentes(false);
+        }
+      } catch {
+        if (vigente) {
+          setFuentes(null);
+          setErrorFuentes(true);
+        }
+      }
+    }
+
+    void actualizar();
+
+    const intervalo = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        void actualizar();
+      }
+    }, 120000);
+
+    return () => {
+      vigente = false;
+      window.clearInterval(intervalo);
+    };
+  }, [token, puedeFuentes]);
+
+  const recientes = fuentes?.fuentes.filter(
+    f => f.frescura === "Recepción reciente"
+  ).length;
+
+  const estadoFuentes = !puedeFuentes
+    ? "Fuentes: sin acceso"
+    : errorFuentes
+      ? "Fuentes: consulta no disponible"
+      : !fuentes
+        ? "Consultando fuentes..."
+        : `${recientes} de ${fuentes.fuentes.length} con recepción reciente`;
+
+  function contenido() {
+    switch (modulo?.ruta) {
+      case "/":
+        return <SismoiaDashboard peru={peru} />;
+
+      case "/eventos":
+        return <CatalogWorkspace modo="eventos" peru={peru} />;
+
+      case "/mapa":
+        return <CatalogWorkspace modo="mapa" peru={peru} />;
+
+      case "/analisis":
+        return <AnalyticsWorkspace peru={peru} />;
+
+      case "/datos":
+        return <PreparationWorkspace peru={peru} />;
+
+      case "/modelos":
+        return <ModelsWorkspace />;
+
+      case "/estimaciones":
+        return <EstimatesWorkspace peru={peru} />;
+
+      case "/reglas":
+        return <AlertsWorkspace seccion="reglas" />;
+
+      case "/alertas":
+        return <AlertsWorkspace seccion="centro" />;
+
+      case "/fuentes":
+        return <SourcesWorkspace />;
+
+      case "/reportes":
+        return <ReportsWorkspace peru={peru} />;
+
+      case "/usuarios":
+        return <ManagementWorkspace seccion="usuarios" />;
+
+      case "/auditoria":
+        return <ManagementWorkspace seccion="auditoria" />;
+
+      default:
+        return null;
+    }
+  }
 
   return (
-    <div className="app-layout">
-      <aside className={`sidebar ${menuAbierto ? "abierto" : ""}`}>
+    <div className="app-layout sismo-shell">
+      {menuAbierto && (
+        <button
+          className="sismo-sidebar-backdrop"
+          aria-label="Cerrar menú de navegación"
+          onClick={() => setMenuAbierto(false)}
+        />
+      )}
+
+      <aside
+        id="sismo-sidebar"
+        className={`sidebar ${menuAbierto ? "abierto" : ""}`}
+        aria-label="Navegación principal"
+      >
         <div className="marca">
-          <Activity size={30}/>
-          <div><strong>SISMOIA</strong><small>ENTERPRISE</small></div>
-          <button className="cerrar-menu" onClick={() => setMenuAbierto(false)}><X/></button>
+          <span className="sismo-brand-icon">
+            <Activity size={27} />
+          </span>
+
+          <div>
+            <strong>SISMOIA</strong>
+            <small>ENTERPRISE</small>
+          </div>
+
+          <button
+            className="cerrar-menu"
+            aria-label="Cerrar menú"
+            onClick={() => setMenuAbierto(false)}
+          >
+            <X size={21} />
+          </button>
         </div>
 
-        <div className="buscador">
-          <Search size={17}/>
+        <label className="buscador">
+          <Search size={17} />
+
           <input
-            placeholder="Buscar módulo..."
-            aria-label="Buscar módulo"
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
+            placeholder="Buscar módulo..."
+            aria-label="Buscar módulo de navegación"
           />
-        </div>
+        </label>
 
-        <nav>
+        <nav aria-label="Módulos del sistema">
           {grupos.map(grupo => {
-            const items = modulos.filter(m =>
-              m.grupo === grupo &&
-              m.nombre.toLowerCase().includes(busqueda.toLowerCase()) && puedeVer(m.ruta)
+            const items = modulos.filter(
+              m =>
+                m.grupo === grupo &&
+                puede(m.permiso) &&
+                m.nombre.toLocaleLowerCase("es")
+                  .includes(
+                    busqueda.toLocaleLowerCase("es").trim()
+                  )
             );
+
             if (!items.length) return null;
+
             return (
               <section className="grupo" key={grupo}>
                 <h4>{grupo}</h4>
+
                 {items.map(m => {
-                  const Icon = m.icono;
+                  const Icono = m.icono;
+
                   return (
                     <NavLink
                       key={m.ruta}
                       to={m.ruta}
                       end
                       onClick={() => setMenuAbierto(false)}
-                      className={({isActive}) => isActive ? "enlace activo" : "enlace"}
+                      className={({isActive}) =>
+                        isActive
+                          ? "enlace activo"
+                          : "enlace"
+                      }
                     >
-                      <Icon size={18}/><span>{m.nombre}</span>
+                      <Icono size={17} aria-hidden="true" />
+                      <span>{m.nombre}</span>
                     </NavLink>
                   );
                 })}
               </section>
             );
           })}
+
+          {!modulos.some(
+            m =>
+              puede(m.permiso) &&
+              m.nombre.toLocaleLowerCase("es").includes(
+                busqueda.toLocaleLowerCase("es").trim()
+              )
+          ) && (
+            <p className="sismo-nav-empty">
+              No se encontraron módulos disponibles.
+            </p>
+          )}
         </nav>
-        <footer className="sidebar-footer">SISMOIA · Fase 1</footer>
+
+        <footer className="sidebar-footer sismo-sidebar-footer">
+          <span className="sismo-sidebar-pulse" />
+          Monitoreo de eventos observados
+        </footer>
       </aside>
 
       <div className="contenido">
-        <header className="topbar">
-          <div className="topbar-titulo">
-            <button className="abrir-menu" onClick={() => setMenuAbierto(true)}><Menu/></button>
-            <strong>{modulo?.nombre ?? "Página no encontrada"}</strong>
+        <header className="topbar sismo-topbar">
+          <div className="topbar-titulo sismo-topbar-title">
+            <button
+              className="abrir-menu"
+              aria-label="Abrir menú"
+              aria-expanded={menuAbierto}
+              aria-controls="sismo-sidebar"
+              onClick={() => setMenuAbierto(true)}
+            >
+              <Menu size={22} />
+            </button>
+
+            <div>
+              <small>Panel empresarial</small>
+              <strong>
+                {modulo?.nombre ?? "Página no encontrada"}
+              </strong>
+            </div>
           </div>
-          <div className="cobertura">
-            <button className={cobertura === "Perú" ? "seleccionado" : ""}
-              onClick={() => setCobertura("Perú")}><MapPin size={16}/> Perú</button>
-            <button className={cobertura === "Mundo" ? "seleccionado" : ""}
-              onClick={() => setCobertura("Mundo")}><Globe2 size={16}/> Mundo</button>
+
+          <div className="sismo-topbar-right">
+            <div
+              className="sismo-source-status"
+              role="status"
+              title="Recepción reciente: eventos almacenados en las últimas 24 horas. No verifica la disponibilidad en vivo de las fuentes."
+            >
+              <Radio size={16} aria-hidden="true" />
+              <span>{estadoFuentes}</span>
+            </div>
+
+            <div className="cobertura" aria-label="Cobertura">
+              <button
+                type="button"
+                className={peru ? "seleccionado" : ""}
+                aria-pressed={peru}
+                onClick={() => setPeru(true)}
+              >
+                <MapPin size={15} />
+                Perú
+              </button>
+
+              <button
+                type="button"
+                className={!peru ? "seleccionado" : ""}
+                aria-pressed={!peru}
+                onClick={() => setPeru(false)}
+              >
+                <Globe2 size={15} />
+                Mundo
+              </button>
+            </div>
+
+            <div
+              className="sismo-user"
+              title={`${nombreUsuario} · ${rolesUsuario}`}
+              aria-label={`Usuario: ${nombreUsuario}. ${rolesUsuario}`}
+            >
+              <span className="sismo-user-avatar">
+                <UserRound size={19} />
+              </span>
+
+              <div>
+                <strong>{nombreUsuario}</strong>
+                <small>{rolesUsuario}</small>
+              </div>
+            </div>
           </div>
         </header>
 
-        <main>
+        <main id="contenido-principal">
           {!modulo ? (
             <section className="panel">
               <h2>Página no encontrada</h2>
-              <Link to="/">Volver al Dashboard</Link>
+              <p>La dirección solicitada no existe.</p>
+              <Link className="sismo-return" to="/">
+                Volver al Dashboard
+              </Link>
             </section>
-          ) : !puedeVer(modulo.ruta) ? (
-<section className="panel"><h2>Acceso restringido</h2><p>No tienes permisos para consultar este módulo.</p></section>
-) : modulo.ruta === "/usuarios" ? (
-<Suspense fallback={<p>Cargando usuarios...</p>}><ManagementWorkspace seccion="usuarios" /></Suspense>
-) : modulo.ruta === "/auditoria" ? (
-<Suspense fallback={<p>Cargando auditoría...</p>}><ManagementWorkspace seccion="auditoria" /></Suspense>
-) : modulo.ruta === "/fuentes" ? (
-<Suspense fallback={<p>Cargando fuentes...</p>}><SourcesWorkspace /></Suspense>
-) : modulo.ruta === "/reportes" ? (
-<Suspense fallback={<p>Cargando reportes...</p>}><ReportsWorkspace peru={cobertura === "Perú"} /></Suspense>
-) : modulo.ruta === "/reglas" ? (
-<Suspense fallback={<p>Cargando reglas...</p>}><AlertsWorkspace seccion="reglas" /></Suspense>
-) : modulo.ruta === "/alertas" ? (
-<Suspense fallback={<p>Cargando alertas...</p>}><AlertsWorkspace seccion="centro" /></Suspense>
-) : modulo.ruta === "/estimaciones" ? (
-<Suspense fallback={<p>Cargando estimaciones...</p>}><EstimatesWorkspace peru={cobertura === "Perú"} /></Suspense>
-) : modulo.ruta === "/modelos" ? (
-<Suspense fallback={<p>Cargando modelos...</p>}><ModelsWorkspace /></Suspense>
-) : modulo.ruta === "/analisis" ? (
-<Suspense fallback={<p>Cargando módulo...</p>}><AnalyticsWorkspace peru={cobertura === "Perú"} /></Suspense>
-) : modulo.ruta === "/datos" ? (
-<Suspense fallback={<p>Cargando módulo...</p>}><PreparationWorkspace peru={cobertura === "Perú"} /></Suspense>
-) : modulo.ruta === "/" ? (
-  <Suspense fallback={<p>Cargando Dashboard...</p>}>
-    <SismoiaDashboard peru={cobertura === "Perú"} />
-  </Suspense>
-) : ["/eventos", "/mapa"].includes(modulo.ruta) ? (
-<Suspense fallback={<p>Cargando módulo...</p>}><CatalogWorkspace modo={modulo.ruta === "/mapa" ? "mapa" : "eventos"} peru={cobertura === "Perú"} /></Suspense>
-) : modulo.ruta === "/" ? (
-            <>
-              <section className="hero">
-                <div>
-                  <p className="etiqueta">MONITOREO Y ANALÍTICA SÍSMICA</p>
-                  <h1>SISMOIA Enterprise</h1>
-                  <p>Plataforma empresarial de monitoreo sísmico mundial,
-                    análisis estadístico y Machine Learning.</p>
-                  <Link className="boton-principal" to="/eventos">
-                    Explorar eventos <ArrowRight size={17}/>
-                  </Link>
-                </div>
-                <Globe2 className="hero-globo" size={115}/>
-              </section>
-
-              <h2>Resumen sísmico — {cobertura}</h2>
-              <p role="status">Estado de servicios: {conexion}</p>
-              <div className="tarjetas">
-                {["Eventos registrados","Magnitud máxima","Profundidad media","Alertas activas"].map(t => (
-                  <div className="tarjeta" key={t}>
-                    <span>{t}</span><strong>—</strong>
-                    <small>Esperando conexión con datos reales</small>
-                  </div>
-                ))}
-              </div>
-
-              <div className="paneles">
-                <section className="panel">
-                  <h3>Actividad sísmica</h3>
-                  <p>Los gráficos aparecerán al conectar el backend.</p>
-                  <div className="estado-vacio"><BarChart3 size={38}/> Sin registros disponibles</div>
-                </section>
-                <section className="panel">
-                  <h3>Mapa de epicentros</h3>
-                  <p>Cobertura seleccionada: {cobertura}</p>
-                  <div className="estado-vacio"><MapPinned size={38}/> Mapa pendiente de integración</div>
-                </section>
-              </div>
-            </>
+          ) : !puede(modulo.permiso) ? (
+            <section className="panel" role="alert">
+              <h2>Acceso restringido</h2>
+              <p>
+                Tu rol no permite utilizar este módulo.
+              </p>
+            </section>
           ) : (
-            <>
-              <div className="encabezado-modulo">
-                <Icono size={31}/>
-                <div><h1>{modulo.nombre}</h1><p>{modulo.descripcion}</p></div>
-              </div>
-              <section className="panel">
-                <h3>Implementación del módulo</h3>
-                <p>Esta sección se desarrollará en su fase correspondiente,
-                  conectándola con FastAPI y PostgreSQL.</p>
-                <p><strong>Cobertura:</strong> {cobertura}</p>
-                <p><strong>Estado:</strong> Pendiente de implementación funcional.</p>
-              </section>
-            </>
+            <Suspense fallback={<CargandoModulo />}>
+              {contenido()}
+            </Suspense>
           )}
-          <p className="advertencia">
-            SISMOIA no predice con certeza la fecha, ubicación ni magnitud de futuros terremotos.
-            Las estimaciones experimentales no son alertas oficiales.
+
+          <p className="advertencia sismo-disclaimer">
+            SISMOIA presenta eventos observados y análisis
+            experimentales. No predice con certeza cuándo
+            ni dónde ocurrirá un terremoto. Las estimaciones
+            no son alertas oficiales.
           </p>
         </main>
       </div>
@@ -238,5 +471,9 @@ function Plataforma() {
 }
 
 export default function App() {
-  return <BrowserRouter><Plataforma/></BrowserRouter>;
+  return (
+    <BrowserRouter>
+      <Plataforma />
+    </BrowserRouter>
+  );
 }

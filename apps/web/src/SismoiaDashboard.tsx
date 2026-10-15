@@ -23,6 +23,7 @@ import DashboardOperations from "./DashboardOperations";
 
 import "leaflet/dist/leaflet.css";
 import "./dashboard-enterprise.css";
+import "./dashboard-alignment.css";
 
 type Evento = {
   id: string;
@@ -294,10 +295,20 @@ export default function SismoiaDashboard({ peru }: Props) {
         </div>
       </header>
 
+
       {cargando && (
-        <p className="seis-notice" role="status">
-          Consultando registros sísmicos...
-        </p>
+        <div
+          className="sismo-dashboard-skeleton"
+          role="status"
+          aria-label="Cargando indicadores sísmicos"
+        >
+          <div className="sismo-skeleton sismo-dash-skeleton-kpi" />
+          <div className="sismo-skeleton sismo-dash-skeleton-kpi" />
+          <div className="sismo-skeleton sismo-dash-skeleton-kpi" />
+          <div className="sismo-skeleton sismo-dash-skeleton-kpi" />
+          <div className="sismo-skeleton sismo-dash-skeleton-chart" />
+          <span>Consultando datos del periodo seleccionado...</span>
+        </div>
       )}
 
       {error && (
@@ -308,6 +319,16 @@ export default function SismoiaDashboard({ peru }: Props) {
 
       {datos && (
         <>
+          <div
+            className="sismo-dashboard-context"
+            aria-label="Contexto de los indicadores"
+          >
+            <span><b>Zona:</b> {peru ? "Perú" : "Mundo"}</span>
+            <span><b>Periodo:</b> {periodos.find(p => p.valor === periodo)?.nombre}</span>
+            <span><b>Fuente:</b> {fuente || "Todas (IGP / USGS)"}</span>
+            <span><b>Muestra:</b> {datos.total.toLocaleString("es-PE")} registros</span>
+            <span><b>Corte:</b> {fecha(datos.calculado_utc)}</span>
+          </div>
           <section className="dash-kpis">
             <article className="dash-kpi dash-kpi-blue">
               <div className="dash-kpi-top">
@@ -481,6 +502,13 @@ export default function SismoiaDashboard({ peru }: Props) {
                 Cantidad de sismos registrados por intervalo.
                 Horario de Perú.
               </p>
+              <div className="sismo-chart-source">
+                <span>Eje X: fecha y hora · horario de Perú</span>
+                <span>Eje Y: cantidad de eventos</span>
+                <span>Fuente: {fuente || "IGP / USGS"}</span>
+                <span>Muestra: {datos.total.toLocaleString("es-PE")}</span>
+                <span>Actualizado: {fecha(datos.calculado_utc)}</span>
+              </div>
             </section>
 
             <section className="dash-card">
@@ -639,6 +667,13 @@ export default function SismoiaDashboard({ peru }: Props) {
                 Hasta 150 eventos recientes del periodo
               </span>
             </div>
+            <div className="sismo-map-context">
+              <span>Coordenadas: latitud / longitud (°)</span>
+              <span>Fuente: {fuente || "IGP / USGS"}</span>
+              <span>Muestra: {datos.eventos_mapa.length} epicentros</span>
+              <span>Corte: {fecha(datos.calculado_utc)}</span>
+              <span>Los colores indican magnitud, no daño ni alerta oficial.</span>
+            </div>
           </section>
 
           <div className="dash-bottom-grid">
@@ -676,6 +711,12 @@ export default function SismoiaDashboard({ peru }: Props) {
                     <strong>{m.cantidad}</strong>
                   </div>
                 ))}
+              </div>
+              <div className="sismo-magnitude-context">
+                Rangos de magnitud · Conteo de registros ·
+                Fuente: {fuente || "IGP / USGS"} ·
+                Muestra: {datos.total.toLocaleString("es-PE")} ·
+                Corte: {fecha(datos.calculado_utc)}
               </div>
             </section>
 
