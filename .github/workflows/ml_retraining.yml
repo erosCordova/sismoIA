@@ -1,0 +1,38 @@
+name: SISMOIA - Reentrenamiento semanal ML
+
+on:
+  schedule:
+    - cron: "37 8 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sismoia-ml-training
+  cancel-in-progress: false
+
+jobs:
+  reentrenar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      RENDER_DEPLOY_HOOK_URL: ${{ secrets.SISMOIA_RENDER_DEPLOY_HOOK_URL }}
+    steps:
+      - name: Validar configuracion
+        shell: bash
+        run: |
+          if [[ "$RENDER_DEPLOY_HOOK_URL" != https://api.render.com/deploy/* ]]; then
+            echo "ERROR=DEPLOY_HOOK_NO_CONFIGURADO"
+            exit 1
+          fi
+      - name: Solicitar reentrenamiento en Render
+        shell: bash
+        run: |
+          codigo=$(curl --silent --show-error --output "$RUNNER_TEMP/render-response.json" --write-out "%{http_code}" --request POST --max-time 60 "$RENDER_DEPLOY_HOOK_URL")
+          echo "RENDER_HTTP=$codigo"
+          if [[ "$codigo" != "200" && "$codigo" != "202" ]]; then
+            echo "REENTRENAMIENTO_SOLICITADO=ERROR"
+            exit 1
+          fi
+          echo "REENTRENAMIENTO_SOLICITADO=OK"
