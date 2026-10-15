@@ -468,3 +468,51 @@
     flex-wrap: wrap;
   }
 }
+
+/* Estado operativo de fuentes sísmicas */
+.dash-source-detail {
+  padding: 12px 14px;
+  margin-top: 9px;
+  background: #f0f9fc;
+  border: 1px solid #d9edf4;
+  border-radius: 11px;
+}
+
+.dash-source-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dash-source-heading strong {
+  font-size: 12px;
+  color: #17445e;
+}
+
+.dash-source-heading span {
+  padding: 5px 8px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.dash-source-active {
+  color: #067a69;
+  background: #dff8ef;
+}
+
+.dash-source-inactive {
+  color: #995b17;
+  background: #fff1dc;
+}
+
+.dash-source-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 15px;
+  margin-top: 9px;
+  font-size: 11px;
+  color: #68839a;
+}

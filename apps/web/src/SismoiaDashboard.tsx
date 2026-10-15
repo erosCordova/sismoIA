@@ -2,9 +2,10 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
 import {
-  Activity, ArrowUpRight, BarChart3, Bell,
+  Activity, ArrowUpRight, BarChart3,
   Clock3, Database, MapPinned, Radio
 } from "lucide-react";
+import DashboardOperations from "./DashboardOperations";
 import "./dashboard-enterprise.css";
 
 type Evento = {
@@ -210,11 +211,6 @@ export default function SismoiaDashboard({
     )
     .join(" ");
 
-  const fuentes = Array.from(
-    new Set(
-      visibles.map(e => e.fuente).filter(Boolean)
-    )
-  );
 
   return (
     <div className="dash">
@@ -658,28 +654,7 @@ export default function SismoiaDashboard({
             </strong>
           </div>
 
-          <div className="dash-status-row">
-            <span>
-              <Radio size={16} />
-              Fuentes en la muestra
-            </span>
-
-            <strong>
-              {fuentes.join(", ") || "Sin registros"}
-            </strong>
-          </div>
-
-          <div className="dash-status-row">
-            <span>
-              <Bell size={16} />
-              Alertas activas
-            </span>
-
-            <Link to="/alertas">
-              Consultar centro
-              <ArrowUpRight size={14} />
-            </Link>
-          </div>
+          <DashboardOperations />
 
           <div className="dash-status-links">
             <Link to="/fuentes">
