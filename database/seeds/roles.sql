@@ -1,0 +1,1 @@
+INSERT INTO roles (id,name,description) VALUES (gen_random_uuid(),'Administrador','Administracion general'),(gen_random_uuid(),'Analista','Analisis y Machine Learning'),(gen_random_uuid(),'Operador de alertas','Gestion de alertas'),(gen_random_uuid(),'Auditor','Revision de auditoria'),(gen_random_uuid(),'Solo lectura','Consulta de informacion') ON CONFLICT (name) DO NOTHING;

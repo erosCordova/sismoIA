@@ -1,0 +1,53 @@
+.seismic-panel{display:grid;gap:18px;min-width:0;color:#25425c}
+.seismic-toolbar,.seismic-actions{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.seismic-toolbar h2{display:flex;gap:9px;align-items:center;margin:0;font-size:22px}
+.seismic-toolbar p,.seismic-footnote{font-size:12px;color:#718399}
+.seismic-actions button,.seismic-actions select,.seismic-pages button{padding:10px;border:1px solid #c9d9e7;border-radius:8px;background:white;color:#24516b}
+.seismic-actions button{display:flex;align-items:center;gap:7px}
+.seismic-actions .seismic-sync{background:#087e98;color:white}
+.seismic-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.seismic-metrics article,.seismic-content{background:white;border:1px solid #dce6ef;border-radius:12px;padding:17px;min-width:0}
+.seismic-metrics article{display:grid;gap:10px}
+.seismic-metrics small{color:#6d8093}.seismic-metrics strong{font-size:29px;color:#087d99}
+.seismic-content h3{margin:0 0 15px}.seismic-scroll{overflow-x:auto}
+.seismic-content table{border-collapse:collapse;width:100%;text-align:left;font-size:13px}
+.seismic-content td,.seismic-content th{padding:12px;border-bottom:1px solid #e7edf2}
+.seismic-content th{background:#edf6fa}.seismic-content a{color:#087e98}
+.seismic-pages{display:flex;align-items:center;justify-content:center;gap:16px}
+.seismic-error{color:#ad293a}.seismic-success{color:#117968}
+@media(max-width:850px){.seismic-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.seismic-metrics{grid-template-columns:1fr}}
+.seismic-quality{background:#fff;border:1px solid #dce6ef;border-radius:12px;padding:19px;display:grid;gap:12px}
+.seismic-quality h3{display:flex;align-items:center;gap:9px;margin:0;color:#24516b}
+.seismic-quality p{color:#708296;font-size:12px;margin:0}
+.seismic-quality button{width:max-content;background:#087e98;color:white;border:0;border-radius:9px;padding:11px 16px;cursor:pointer}
+.seismic-quality button:disabled{opacity:.5}
+.seismic-quality table{width:100%;border-collapse:collapse;font-size:12px}
+.seismic-quality th,.seismic-quality td{padding:10px;text-align:left;border-bottom:1px solid #edf1f5}
+/* SISMOIA_SEIS_STYLE */
+.seis-root{display:grid;gap:20px;width:100%;min-width:0;color:#274961}
+.seis-header{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap}
+.seis-header h2{display:flex;align-items:center;gap:9px;color:#153e5e;font-size:22px;margin:0 0 8px}
+.seis-header p,.seis-caption{color:#74889a;font-size:12px;line-height:1.6}
+.seis-actions{display:flex;align-items:end;gap:9px;flex-wrap:wrap}
+.seis-actions label{display:grid;gap:5px;font-size:12px;color:#557086}
+.seis-actions select,.seis-actions button,.seis-pagination button{border:1px solid #ccdae5;background:white;color:#28546f;border-radius:9px;padding:10px 13px;cursor:pointer}
+.seis-actions button{display:flex;align-items:center;gap:8px}
+.seis-actions .seis-primary{background:#087f99;color:white;border-color:#087f99}
+.seis-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.seis-stats article{display:grid;gap:10px;padding:20px;background:white;border:1px solid #dfe8ef;border-radius:13px}
+.seis-stats span{font-size:12px;color:#74879b}
+.seis-stats strong{font-size:29px;color:#087c99}
+.seis-surface{background:white;border:1px solid #dfe8ef;border-radius:14px;padding:18px;min-width:0}
+.seis-surface h3{display:flex;align-items:center;gap:8px;margin:0 0 15px;color:#224963;font-size:16px}
+.seis-map{overflow:hidden;border:1px solid #dce8f0;border-radius:11px}
+.seis-table-scroll{width:100%;overflow-x:auto}
+.seis-table{width:100%;border-collapse:collapse;font-size:13px;text-align:left}
+.seis-table th{background:#edf6fa;color:#315571;padding:12px}
+.seis-table td{padding:12px;border-bottom:1px solid #edf0f4}
+.seis-table a{color:#087f99;text-decoration:none}
+.seis-pagination{display:flex;align-items:center;justify-content:center;gap:14px}
+.seis-error{padding:12px;background:#fff0f1;color:#af2c40;border-radius:8px}
+.seis-notice{padding:12px;background:#e8f7f4;color:#126c66;border-radius:8px}
+@media(max-width:900px){.seis-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.seis-stats{grid-template-columns:1fr}.seis-surface{padding:10px}}

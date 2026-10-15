@@ -1,0 +1,29 @@
+.prep-root{display:grid;gap:20px;color:#28475e;min-width:0}
+.prep-header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.prep-header h2{display:flex;align-items:center;gap:9px;margin:0;color:#143f60;font-size:22px}
+.prep-header p,.prep-card>p,.prep-footer{font-size:12px;color:#73869a;line-height:1.6}
+.prep-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.prep-actions select,.prep-actions button{border:1px solid #ccdae7;border-radius:9px;padding:10px 13px;background:white;color:#28546e}
+.prep-actions button{display:flex;align-items:center;gap:7px;cursor:pointer}
+.prep-actions button:disabled{opacity:.55;cursor:wait}
+.prep-actions .prep-download{background:#087f99;color:white;border-color:#087f99}
+.prep-check{display:flex;align-items:center;gap:7px;font-size:12px;color:#526b80}
+.prep-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.prep-metrics article,.prep-card{background:white;border:1px solid #dfe8ef;border-radius:14px;padding:19px;min-width:0}
+.prep-metrics article{display:grid;gap:12px}
+.prep-metrics span{font-size:12px;color:#71869a}
+.prep-metrics strong{font-size:27px;color:#087c98}
+.prep-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.prep-card h3{display:flex;align-items:center;gap:8px;font-size:16px;color:#204967;margin:0 0 12px}
+.prep-chart{width:100%;height:270px;min-width:0}
+.prep-detail{display:flex;justify-content:space-between;gap:15px;padding:12px 0;border-bottom:1px solid #eaf0f4;font-size:13px}
+.prep-detail strong{color:#167b95}
+.prep-note{display:flex;align-items:center;gap:8px;padding:12px;background:#fff7e8;color:#99661e;border-radius:8px;font-size:12px}
+.prep-table-wrap{overflow-x:auto;width:100%}
+.prep-table{border-collapse:collapse;width:100%;font-size:12px;text-align:left}
+.prep-table th{background:#eaf5fa;color:#355770;padding:12px;white-space:nowrap}
+.prep-table td{padding:12px;border-bottom:1px solid #edf1f5;white-space:nowrap}
+.prep-error{background:#fff0f1;color:#b22d40;padding:12px;border-radius:8px}
+.prep-loading{background:#eaf6fb;padding:12px;border-radius:8px;font-size:12px}
+@media(max-width:950px){.prep-grid{grid-template-columns:1fr}.prep-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.prep-metrics{grid-template-columns:1fr}.prep-header h2{font-size:19px}}

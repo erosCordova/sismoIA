@@ -1,0 +1,7 @@
+.rep-note{font-size:12px;line-height:1.65;color:#607b8e;margin:14px 0}
+.rep-small{display:block;font-size:11px;color:#748a9e;margin-top:4px}
+.rep-date{font-size:17px!important}
+.rep-source-list{display:grid;gap:10px;margin-top:12px}
+.rep-source-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px;background:#f3f8fb;border-radius:9px}
+.rep-source-row span{color:#526b7c}
+.rep-source-row strong{color:#15627d}
