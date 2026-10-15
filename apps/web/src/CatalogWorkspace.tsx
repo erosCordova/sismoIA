@@ -3,7 +3,7 @@ import {
   type FormEvent
 } from "react";
 import {
-  MapContainer, TileLayer, CircleMarker, Popup
+  MapContainer, TileLayer, CircleMarker, Popup, Circle, Polygon, Polyline
 } from "react-leaflet";
 import type { Map as LeafletMap } from "leaflet";
 import {
@@ -13,6 +13,8 @@ import {
 import { TokenContext } from "./AuthGate";
 import "leaflet/dist/leaflet.css";
 import "./catalog.css";
+import CatalogMapActions from "./CatalogMapActions";
+// SISMOIA_CATALOGO_UI_V4
 
 type Evento = {
   id: string;
@@ -50,6 +52,8 @@ type Filtros = {
   min_depth: string;
   max_depth: string;
   fuente: string;
+  q: string;
+  orden: string;
 };
 
 type Zona = {
@@ -69,7 +73,9 @@ function filtrosIniciales(): Filtros {
     max_magnitude: "",
     min_depth: "",
     max_depth: "",
-    fuente: ""
+    fuente: "",
+    q: "",
+    orden: "fecha_desc"
   };
 }
 
@@ -111,6 +117,14 @@ export default function CatalogWorkspace({
     useState<Filtros>(filtrosIniciales);
 
   const [zona, setZona] = useState<Zona | null>(null);
+  const [radio, setRadio] = useState<[number, number] | null>(null);
+  const [radioKm, setRadioKm] = useState("100");
+  const [poligono, setPoligono] = useState<[number, number][]>([]);
+  const [vertices, setVertices] = useState<[number, number][]>([]);
+  const [herramienta, setHerramienta] =
+    useState<"ninguna" | "radio" | "poligono">("ninguna");
+  const [capa, setCapa] = useState<"osm" | "clara">("osm");
+  const [zoom, setZoom] = useState(peru ? 5 : 2);
   const [pagina, setPagina] = useState(1);
   const [revision, setRevision] = useState(0);
 
@@ -127,6 +141,11 @@ export default function CatalogWorkspace({
   useEffect(() => {
     setPagina(1);
     setZona(null);
+    setRadio(null);
+    setPoligono([]);
+    setVertices([]);
+    setHerramienta("ninguna");
+    setZoom(peru ? 5 : 2);
     setSeleccionado(null);
     setDetalle(null);
   }, [modo, peru]);
@@ -145,10 +164,20 @@ export default function CatalogWorkspace({
       if (valor) params.set(clave, valor);
     });
 
-    if (modo === "mapa" && zona) {
-      Object.entries(zona).forEach(([clave, valor]) => {
-        params.set(clave, valor);
-      });
+    if (modo === "mapa") {
+      if (zona) {
+        Object.entries(zona).forEach(([k, v]) => params.set(k, v));
+      }
+
+      if (radio) {
+        params.set("radio_lat", String(radio[0]));
+        params.set("radio_lon", String(radio[1]));
+        params.set("radio_km", radioKm);
+      }
+
+      if (poligono.length >= 3) {
+        params.set("poligono", JSON.stringify(poligono));
+      }
     }
 
     async function cargar() {
@@ -187,7 +216,10 @@ export default function CatalogWorkspace({
 
     void cargar();
     return () => ctrl.abort();
-  }, [token, modo, peru, filtros, zona, pagina, revision, limite]);
+  }, [
+    token, modo, peru, filtros, zona,
+    radio, radioKm, poligono, pagina, revision, limite
+  ]);
 
   useEffect(() => {
     if (!token || !seleccionado) return;
@@ -268,6 +300,10 @@ export default function CatalogWorkspace({
     setFormulario(inicial);
     setFiltros(inicial);
     setZona(null);
+    setRadio(null);
+    setPoligono([]);
+    setVertices([]);
+    setHerramienta("ninguna");
     setPagina(1);
     setError("");
     setRevision(v => v + 1);
@@ -277,11 +313,16 @@ export default function CatalogWorkspace({
     const bounds = mapaRef.current?.getBounds();
     if (!bounds) return;
 
+    setRadio(null);
+    setPoligono([]);
+    setVertices([]);
+    setHerramienta("ninguna");
+
     setZona({
-      lat_min: bounds.getSouth().toFixed(5),
-      lat_max: bounds.getNorth().toFixed(5),
-      lon_min: bounds.getWest().toFixed(5),
-      lon_max: bounds.getEast().toFixed(5)
+      lat_min: Math.max(-90, bounds.getSouth()).toFixed(5),
+      lat_max: Math.min(90, bounds.getNorth()).toFixed(5),
+      lon_min: Math.max(-180, bounds.getWest()).toFixed(5),
+      lon_max: Math.min(180, bounds.getEast()).toFixed(5)
     });
 
     setPagina(1);
@@ -291,7 +332,11 @@ export default function CatalogWorkspace({
     if (modo !== "mapa") return [];
 
     const mapa = new Map<string, Evento[]>();
-    const escala = peru ? 0.35 : 1.5;
+    const escala = zoom >= 9 ? 0.02
+      : zoom >= 7 ? 0.08
+      : zoom >= 5 ? 0.25
+      : zoom >= 4 ? 0.6
+      : 1.5;
 
     for (const e of datos?.eventos ?? []) {
       const clave = [
@@ -310,7 +355,7 @@ export default function CatalogWorkspace({
       longitud: lista.reduce((s, e) => s + e.longitud, 0) / lista.length,
       magnitud: Math.max(...lista.map(e => e.magnitud))
     }));
-  }, [datos, modo, peru]);
+  }, [datos, modo, zoom]);
 
   const total = datos?.total ?? 0;
   const paginas = Math.max(1, Math.ceil(total / limite));
@@ -439,6 +484,39 @@ export default function CatalogWorkspace({
           </label>
         </div>
 
+        <div className="cat-fields cat-extra-filters">
+          <label>
+            Buscar localidad o ID externo
+            <input
+              type="search"
+              maxLength={100}
+              placeholder="Buscar en registros"
+              value={formulario.q}
+              onChange={e => setFormulario(v => ({
+                ...v,
+                q: e.target.value
+              }))}
+            />
+          </label>
+
+          <label>
+            Orden de resultados
+            <select
+              value={formulario.orden}
+              onChange={e => setFormulario(v => ({
+                ...v,
+                orden: e.target.value
+              }))}
+            >
+              <option value="fecha_desc">Más recientes</option>
+              <option value="fecha_asc">Más antiguos</option>
+              <option value="magnitud_desc">Mayor magnitud</option>
+              <option value="magnitud_asc">Menor magnitud</option>
+              <option value="profundidad_desc">Mayor profundidad</option>
+            </select>
+          </label>
+        </div>
+
         <div className="cat-filter-actions">
           <button type="submit" className="cat-primary">
             <Search size={16}/>
@@ -452,7 +530,27 @@ export default function CatalogWorkspace({
       </form>
 
       {error && <p role="alert" className="cat-error">{error}</p>}
-      {cargando && <p role="status" className="cat-loading">Consultando eventos...</p>}
+      {cargando && (
+        <div role="status" className="cat-skeleton-list">
+          <div className="cat-skeleton" />
+          <div className="cat-skeleton" />
+          <span>Consultando eventos sísmicos...</span>
+        </div>
+      )}
+
+      <div className="cat-applied-context">
+        <span>Zona: {peru ? "Perú" : "Mundo"}</span>
+        <span>Fuente: {filtros.fuente || "IGP y USGS"}</span>
+        <span>
+          Periodo desde: {filtros.fecha_desde || "sin inicio"}
+        </span>
+        <span>
+          Orden: {filtros.orden.replaceAll("_", " ")}
+        </span>
+        <span>
+          Consulta: {fecha(datos?.consultado_utc ?? null, true)}
+        </span>
+      </div>
 
       <div className="cat-summary">
         <article>
@@ -510,6 +608,100 @@ export default function CatalogWorkspace({
             </div>
           )}
 
+          <div className="cat-geo-toolbar">
+            <label>
+              Capa
+              <select
+                value={capa}
+                onChange={e => setCapa(
+                  e.target.value as "osm" | "clara"
+                )}
+              >
+                <option value="osm">OpenStreetMap</option>
+                <option value="clara">Mapa claro</option>
+              </select>
+            </label>
+
+            <button
+              type="button"
+              className={
+                herramienta === "radio"
+                  ? "cat-tool-selected"
+                  : ""
+              }
+              onClick={() => {
+                setHerramienta("radio");
+                setVertices([]);
+              }}
+            >
+              Seleccionar radio
+            </button>
+
+            <label>
+              Radio (km)
+              <input
+                type="number"
+                min="1"
+                max="800"
+                value={radioKm}
+                onChange={e => setRadioKm(e.target.value)}
+              />
+            </label>
+
+            <button
+              type="button"
+              className={
+                herramienta === "poligono"
+                  ? "cat-tool-selected"
+                  : ""
+              }
+              onClick={() => {
+                setHerramienta("poligono");
+                setVertices([]);
+              }}
+            >
+              Dibujar polígono
+            </button>
+
+            {herramienta === "poligono" && (
+              <button
+                type="button"
+                disabled={vertices.length < 3}
+                onClick={() => {
+                  setPoligono([...vertices]);
+                  setRadio(null);
+                  setZona(null);
+                  setHerramienta("ninguna");
+                  setPagina(1);
+                }}
+              >
+                Aplicar {vertices.length} vértices
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                setRadio(null);
+                setPoligono([]);
+                setVertices([]);
+                setZona(null);
+                setHerramienta("ninguna");
+                setPagina(1);
+              }}
+            >
+              Quitar selección
+            </button>
+          </div>
+
+          {herramienta !== "ninguna" && (
+            <p className="cat-map-instruction" role="status">
+              {herramienta === "radio"
+                ? "Selecciona el centro del radio con un clic."
+                : `Selecciona entre 3 y 12 vértices. Van ${vertices.length}.`}
+            </p>
+          )}
+
           <div className="cat-map">
             <MapContainer
               key={peru ? "catalogo-pe" : "catalogo-global"}
@@ -519,10 +711,75 @@ export default function CatalogWorkspace({
               scrollWheelZoom
               style={{ width: "100%", height: "100%" }}
             >
-              <TileLayer
-                attribution="&copy; OpenStreetMap contributors"
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              <CatalogMapActions
+                onZoom={setZoom}
+                onClick={(lat, lon) => {
+                  if (herramienta === "radio") {
+                    if (!(
+                      Number(radioKm) >= 1
+                      && Number(radioKm) <= 800
+                    )) {
+                      setError("Introduce un radio de 1 a 800 km");
+                      return;
+                    }
+
+                    setRadio([lat, lon]);
+                    setPoligono([]);
+                    setZona(null);
+                    setHerramienta("ninguna");
+                    setPagina(1);
+                  } else if (herramienta === "poligono") {
+                    setVertices(v =>
+                      v.length < 12
+                        ? [...v, [lat, lon]]
+                        : v
+                    );
+                  }
+                }}
               />
+
+              {capa === "osm" ? (
+                <TileLayer
+                  attribution="&copy; OpenStreetMap contributors"
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+              ) : (
+                <TileLayer
+                  attribution="&copy; OpenStreetMap contributors &copy; CARTO"
+                  url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"
+                />
+              )}
+
+              {radio && (
+                <Circle
+                  center={radio}
+                  radius={Number(radioKm) * 1000}
+                  pathOptions={{
+                    color: "#167ea9",
+                    fillOpacity: 0.07
+                  }}
+                />
+              )}
+
+              {poligono.length >= 3 && (
+                <Polygon
+                  positions={poligono}
+                  pathOptions={{
+                    color: "#167ea9",
+                    fillOpacity: 0.08
+                  }}
+                />
+              )}
+
+              {vertices.length >= 2 && (
+                <Polyline
+                  positions={vertices}
+                  pathOptions={{
+                    color: "#c87827",
+                    dashArray: "5 6"
+                  }}
+                />
+              )}
 
               {grupos.map((grupo, i) => (
                 <CircleMarker
@@ -583,6 +840,9 @@ export default function CatalogWorkspace({
           </div>
 
           <p className="cat-footnote">
+            La agrupación cambia con el zoom. La selección por radio
+            y polígono filtra registros en PostgreSQL.
+            El área Perú es una aproximación por coordenadas.
             Los puntos cercanos se agrupan para facilitar la lectura.
             Los colores indican magnitud observada, no riesgo ni zonas
             de impacto. El mapa muestra hasta 500 registros por página.
@@ -775,7 +1035,7 @@ export default function CatalogWorkspace({
                   <strong>Procedencia del registro</strong>
                   <small>ID interno: {detalle.id}</small>
                   <small>
-                    Huella calculada del proveedor e ID externo:
+                    Huella del identificador, no del registro original:
                     {" "}{detalle.huella_origen_calculada || "—"}
                   </small>
 

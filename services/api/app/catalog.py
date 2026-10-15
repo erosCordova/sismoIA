@@ -3,7 +3,10 @@ from hashlib import sha256
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func, select
+from sqlalchemy import func, select, or_, cast, Float, text, bindparam
+from typing import Literal
+from math import isfinite
+import json
 from sqlalchemy.orm import Session
 
 from app.access import requerir_permiso
@@ -34,6 +37,11 @@ def filtros_catalogo(
     lat_max: float | None = Query(None, ge=-90, le=90),
     lon_min: float | None = Query(None, ge=-180, le=180),
     lon_max: float | None = Query(None, ge=-180, le=180),
+    q: str | None = Query(None, max_length=100),
+    radio_lat: float | None = Query(None, ge=-90, le=90),
+    radio_lon: float | None = Query(None, ge=-180, le=180),
+    radio_km: float | None = Query(None, ge=1, le=800),
+    poligono: str | None = Query(None, max_length=1000),
 ):
     if fecha_desde and fecha_hasta and fecha_desde > fecha_hasta:
         raise HTTPException(422, "La fecha inicial supera la final")
@@ -95,6 +103,73 @@ def filtros_catalogo(
     if lon_max is not None:
         condiciones.append(SeismicEvent.longitude <= lon_max)
 
+    # SISMOIA_CATALOGO_GEO_V4
+    if q and q.strip():
+        busqueda = q.strip()
+        condiciones.append(or_(
+            SeismicEvent.place.ilike(f"%{busqueda}%"),
+            SeismicEvent.external_id.ilike(f"%{busqueda}%")
+        ))
+
+    if any(v is not None for v in (radio_lat, radio_lon, radio_km)):
+        if not all(v is not None for v in (radio_lat, radio_lon, radio_km)):
+            raise HTTPException(422, "Radio incompleto")
+
+        lat1 = func.radians(cast(SeismicEvent.latitude, Float))
+        lon1 = func.radians(cast(SeismicEvent.longitude, Float))
+        lat2 = func.radians(radio_lat)
+        lon2 = func.radians(radio_lon)
+
+        coseno = (
+            func.sin(lat1) * func.sin(lat2)
+            + func.cos(lat1) * func.cos(lat2)
+            * func.cos(lon1 - lon2)
+        )
+
+        distancia_km = 6371.0088 * func.acos(
+            func.least(1.0, func.greatest(-1.0, coseno))
+        )
+        condiciones.append(distancia_km <= radio_km)
+
+    if poligono:
+        try:
+            vertices = json.loads(poligono)
+
+            if not isinstance(vertices, list) or not 3 <= len(vertices) <= 12:
+                raise ValueError()
+
+            coordenadas = []
+
+            for punto in vertices:
+                if not isinstance(punto, list) or len(punto) != 2:
+                    raise ValueError()
+
+                lat, lon = [float(v) for v in punto]
+
+                if not (
+                    isfinite(lat) and isfinite(lon)
+                    and -90 <= lat <= 90
+                    and -180 <= lon <= 180
+                ):
+                    raise ValueError()
+
+                coordenadas.append(f"({lon:.7f},{lat:.7f})")
+
+            expresion = "(" + ",".join(coordenadas) + ")"
+
+        except (ValueError, TypeError, OverflowError):
+            raise HTTPException(422, "Polígono inválido")
+
+        condiciones.append(
+            text(
+                "point(CAST(seismic_events.longitude AS double precision), "
+                "CAST(seismic_events.latitude AS double precision)) "
+                "<@ CAST(:geo_poligono AS polygon)"
+            ).bindparams(
+                bindparam("geo_poligono", expresion)
+            )
+        )
+
     return condiciones
 
 
@@ -118,7 +193,7 @@ def evento_json(e, fuente):
     }
 
 
-def listar(db, filtros, limite, desplazamiento):
+def listar(db, filtros, limite, desplazamiento, orden="fecha_desc"):
     base = (
         select(SeismicEvent)
         .join(DataSource, DataSource.id == SeismicEvent.source_id)
@@ -129,14 +204,34 @@ def listar(db, filtros, limite, desplazamiento):
         select(func.count()).select_from(base.subquery())
     ) or 0
 
+    ordenes = {
+        "fecha_desc": [
+            SeismicEvent.occurred_at.desc(),
+            SeismicEvent.id.desc()
+        ],
+        "fecha_asc": [
+            SeismicEvent.occurred_at.asc(),
+            SeismicEvent.id.asc()
+        ],
+        "magnitud_desc": [
+            SeismicEvent.magnitude.desc(),
+            SeismicEvent.occurred_at.desc()
+        ],
+        "magnitud_asc": [
+            SeismicEvent.magnitude.asc(),
+            SeismicEvent.occurred_at.desc()
+        ],
+        "profundidad_desc": [
+            SeismicEvent.depth_km.desc().nullslast(),
+            SeismicEvent.occurred_at.desc()
+        ],
+    }
+
     consulta = (
         select(SeismicEvent, DataSource.name)
         .join(DataSource, DataSource.id == SeismicEvent.source_id)
         .where(*filtros)
-        .order_by(
-            SeismicEvent.occurred_at.desc(),
-            SeismicEvent.id.desc(),
-        )
+        .order_by(*ordenes[orden], SeismicEvent.id.desc())
         .offset(desplazamiento)
         .limit(limite)
     )
@@ -160,10 +255,15 @@ def listar_eventos(
     filtros=Depends(filtros_catalogo),
     limite: int = Query(25, ge=1, le=100),
     offset: int = Query(0, ge=0),
+    orden: Literal[
+        "fecha_desc", "fecha_asc",
+        "magnitud_desc", "magnitud_asc",
+        "profundidad_desc"
+    ] = "fecha_desc",
     usuario=Depends(requerir_permiso("events:read")),
 ):
     with Session(engine) as db:
-        return listar(db, filtros, limite, offset)
+        return listar(db, filtros, limite, offset, orden)
 
 
 @router.get("/map")
@@ -171,10 +271,15 @@ def listar_mapa(
     filtros=Depends(filtros_catalogo),
     limite: int = Query(500, ge=1, le=500),
     offset: int = Query(0, ge=0),
+    orden: Literal[
+        "fecha_desc", "fecha_asc",
+        "magnitud_desc", "magnitud_asc",
+        "profundidad_desc"
+    ] = "fecha_desc",
     usuario=Depends(requerir_permiso("map:read")),
 ):
     with Session(engine) as db:
-        return listar(db, filtros, limite, offset)
+        return listar(db, filtros, limite, offset, orden)
 
 
 def detalle_evento(evento_id):
