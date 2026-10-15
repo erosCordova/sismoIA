@@ -9,3 +9,5 @@ PyJWT
 numpy
 scikit-learn
 joblib
+openpyxl>=3.1,<4
+reportlab>=4.2,<5

@@ -3,6 +3,7 @@ import { Activity, RefreshCw, Save, ShieldCheck, Users } from "lucide-react";
 import { TokenContext, UsuarioContext } from "./AuthGate";
 import "./preparation.css";
 import "./management.css";
+import "./operations-enterprise.css";
 import UserCreateForm from "./UserCreateForm";
 
 type Usuario = { id: string; nombre: string; email: string; estado: string; roles: string[]; creado_utc: string | null; ultimo_acceso_utc: string | null };
@@ -18,6 +19,7 @@ export default function ManagementWorkspace({ seccion }: { seccion: "usuarios" |
   const [roles, setRoles] = useState<Rol[]>([]);
   const [historial, setHistorial] = useState<Auditoria[]>([]);
   const [totalAuditoria, setTotalAuditoria] = useState(0);
+  const [paginaAuditoria, setPaginaAuditoria] = useState(1);
   const [sistema, setSistema] = useState<Sistema | null>(null);
   const [buscarUsuario, setBuscarUsuario] = useState("");
   const [buscarAuditoria, setBuscarAuditoria] = useState("");
@@ -48,7 +50,7 @@ export default function ManagementWorkspace({ seccion }: { seccion: "usuarios" |
           const [a, b] = await Promise.all([consultar("/users"), consultar("/roles")]);
           if (vigente) { setUsuarios(a.usuarios); setRoles(b.roles); }
         } else {
-          const filtro = new URLSearchParams({ busqueda: buscarAuditoria, limite: "100" });
+          const filtro = new URLSearchParams({ busqueda: buscarAuditoria, limite: "50", offset: String((paginaAuditoria - 1) * 50) });
           const [a, b] = await Promise.all([consultar(`/audit?${filtro}`), consultar("/system")]);
           if (vigente) { setHistorial(a.registros); setTotalAuditoria(a.total); setSistema(b); }
         }
@@ -58,7 +60,7 @@ export default function ManagementWorkspace({ seccion }: { seccion: "usuarios" |
     }
     void cargar();
     return () => { vigente = false; };
-  }, [token, seccion, buscarAuditoria, revision]);
+  }, [token, seccion, buscarAuditoria, paginaAuditoria, revision]);
 
   function alternarRol(nombre: string, marcado: boolean) {
     setSeleccion(actual => marcado ? [...actual, nombre] : actual.filter(r => r !== nombre));
@@ -147,7 +149,7 @@ export default function ManagementWorkspace({ seccion }: { seccion: "usuarios" |
       </article>
       <article className="prep-card">
         <div className="management-heading"><h3>Historial de auditoría ({numero(totalAuditoria)})</h3>
-          <input aria-label="Filtrar auditoría" placeholder="Filtrar acción o entidad..." value={buscarAuditoria} onChange={e => setBuscarAuditoria(e.target.value)}/>
+          <input aria-label="Filtrar auditoría" placeholder="Filtrar acción o entidad..." value={buscarAuditoria} onChange={e => { setBuscarAuditoria(e.target.value); setPaginaAuditoria(1); }}/>
         </div>
         <div className="prep-table-wrap"><table className="prep-table">
           <thead><tr><th>Fecha</th><th>Acción</th><th>Usuario responsable</th><th>Entidad</th><th>ID entidad</th></tr></thead>
@@ -156,7 +158,27 @@ export default function ManagementWorkspace({ seccion }: { seccion: "usuarios" |
             <td className="management-identifier">{a.entidad_id || "—"}</td>
           </tr>)}</tbody>
         </table></div>
-        <p className="management-small">Se muestran hasta 100 operaciones recientes según el filtro. No se exponen datos secretos ni hashes.</p>
+        <div className="ops-audit-pagination">
+          <button
+            disabled={paginaAuditoria <= 1 || cargando}
+            onClick={() => setPaginaAuditoria(p => Math.max(1, p - 1))}
+          >
+            Anterior
+          </button>
+          <span>
+            Página {paginaAuditoria} de {Math.max(1, Math.ceil(totalAuditoria / 50))}
+          </span>
+          <button
+            disabled={cargando || paginaAuditoria >= Math.ceil(totalAuditoria / 50)}
+            onClick={() => setPaginaAuditoria(p => p + 1)}
+          >
+            Siguiente
+          </button>
+        </div>
+        <p className="management-small">
+          Se muestran 50 operaciones por página.
+          No se exponen secretos ni contraseñas.
+        </p>
       </article>
     </>}
   </section>;
