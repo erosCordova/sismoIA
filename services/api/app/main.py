@@ -105,3 +105,7 @@ app.include_router(dashboard_router)
 
 from app.catalog import router as catalog_router
 app.include_router(catalog_router)
+
+
+from app.science import router as science_router
+app.include_router(science_router)

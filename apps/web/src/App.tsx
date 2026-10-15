@@ -50,6 +50,7 @@ const grupos = [
 ];
 
 const SismoiaDashboard = lazy(() => import("./SismoiaDashboard"));
+const SciencePanels = lazy(() => import("./SciencePanels"));
 const CatalogWorkspace = lazy(() => import("./CatalogWorkspace"));
 const AnalyticsWorkspace = lazy(() => import("./AnalyticsWorkspace"));
 const PreparationWorkspace = lazy(() => import("./PreparationWorkspace"));
@@ -226,13 +227,13 @@ function Plataforma() {
         return <CatalogWorkspace modo="mapa" peru={peru} />;
 
       case "/analisis":
-        return <AnalyticsWorkspace peru={peru} />;
+        return <><AnalyticsWorkspace peru={peru} /><SciencePanels modo="analisis" peru={peru} /></>;
 
       case "/datos":
-        return <PreparationWorkspace peru={peru} />;
+        return <><PreparationWorkspace peru={peru} /><SciencePanels modo="datos" peru={peru} /></>;
 
       case "/modelos":
-        return <ModelsWorkspace />;
+        return <><ModelsWorkspace /><SciencePanels modo="modelos" peru={peru} /></>;
 
       case "/estimaciones":
         return <EstimatesWorkspace peru={peru} />;
