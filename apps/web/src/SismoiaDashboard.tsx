@@ -1,6 +1,16 @@
 import { useContext, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  LabelList
+} from "recharts";
+import {
   MapContainer, TileLayer, CircleMarker, Popup
 } from "react-leaflet";
 import {
@@ -159,22 +169,68 @@ export default function SismoiaDashboard({ peru }: Props) {
     return () => controlador.abort();
   }, [token, periodo, fuente, peru, revision]);
 
-  const serie = datos?.serie ?? [];
+  const inicioSerie = datos
+    ? new Date(datos.inicio_utc).getTime()
+    : 0;
 
-  const maxSerie = Math.max(
+  const finSerie = datos
+    ? new Date(datos.calculado_utc).getTime()
+    : 0;
+
+  const duracionIntervalo = Math.max(
     1,
-    ...serie.map(p => p.cantidad)
+    (finSerie - inicioSerie) / 10
   );
 
-  const puntos = serie.map((p, i) => {
-    const x = serie.length > 1
-      ? (i / (serie.length - 1)) * 540
-      : 270;
+  const formatoEje: Intl.DateTimeFormatOptions =
+    periodo === "24h"
+      ? {
+          timeZone: "America/Lima",
+          hour: "2-digit",
+          minute: "2-digit"
+        }
+      : periodo === "7d"
+        ? {
+            timeZone: "America/Lima",
+            day: "2-digit",
+            month: "2-digit",
+            hour: "2-digit"
+          }
+        : periodo === "todos"
+          ? {
+              timeZone: "America/Lima",
+              month: "short",
+              year: "2-digit"
+            }
+          : {
+              timeZone: "America/Lima",
+              day: "2-digit",
+              month: "2-digit"
+            };
 
-    const y = 112 - (p.cantidad / maxSerie) * 95;
+  const formateadorEje = new Intl.DateTimeFormat(
+    "es-PE",
+    formatoEje
+  );
 
-    return `${x},${y}`;
-  }).join(" ");
+  const serieGrafico = (datos?.serie ?? []).map(
+    (registro, indice) => {
+      const desde = inicioSerie + indice * duracionIntervalo;
+      const hasta = Math.min(
+        finSerie,
+        desde + duracionIntervalo
+      );
+
+      return {
+        ...registro,
+        etiqueta: formateadorEje.format(
+          new Date(desde + duracionIntervalo / 2)
+        ),
+        desde: fecha(new Date(desde).toISOString()),
+        hasta: fecha(new Date(hasta).toISOString())
+      };
+    }
+  );
 
   const maxMagnitud = Math.max(
     1,
@@ -313,71 +369,118 @@ export default function SismoiaDashboard({ peru }: Props) {
                 <BarChart3 size={20} />
               </header>
 
+              <div className="dash-chart-meta">
+                <span>Número de sismos</span>
+                <span>
+                  {fecha(datos.inicio_utc)}
+                  {" — "}
+                  {fecha(datos.calculado_utc)}
+                </span>
+              </div>
+
               {datos.total > 0 ? (
-                <div className="dash-line-wrap">
-                  <svg
-                    className="dash-line"
-                    viewBox="0 0 540 135"
-                    role="img"
-                    aria-label="Cantidad de eventos sísmicos en diez intervalos del periodo"
-                  >
-                    {[20, 65, 112].map(y => (
-                      <line
-                        key={y}
-                        x1="0"
-                        x2="540"
-                        y1={y}
-                        y2={y}
-                        stroke="#e8eef6"
-                        strokeDasharray="5 6"
+                <div className="dash-plot">
+                  <ResponsiveContainer width="100%" height={290}>
+                    <BarChart
+                      data={serieGrafico}
+                      margin={{
+                        top: 25,
+                        right: 8,
+                        left: -16,
+                        bottom: 10
+                      }}
+                      barCategoryGap="23%"
+                    >
+                      <CartesianGrid
+                        vertical={false}
+                        stroke="#e5edf4"
+                        strokeDasharray="4 5"
                       />
-                    ))}
 
-                    <polyline
-                      points={puntos}
-                      fill="none"
-                      stroke="#0da4b6"
-                      strokeWidth="3.5"
-                      strokeLinejoin="round"
-                      strokeLinecap="round"
-                    />
+                      <XAxis
+                        dataKey="etiqueta"
+                        axisLine={false}
+                        tickLine={false}
+                        minTickGap={15}
+                        interval="preserveStartEnd"
+                        tick={{
+                          fill: "#607c91",
+                          fontSize: 11
+                        }}
+                        dy={10}
+                      />
 
-                    {serie.map((p, i) => {
-                      const x = serie.length > 1
-                        ? i * 540 / (serie.length - 1)
-                        : 270;
+                      <YAxis
+                        allowDecimals={false}
+                        axisLine={false}
+                        tickLine={false}
+                        width={38}
+                        tick={{
+                          fill: "#607c91",
+                          fontSize: 11
+                        }}
+                      />
 
-                      const y = 112 -
-                        (p.cantidad / maxSerie) * 95;
+                      <Tooltip
+                        cursor={{
+                          fill: "#edf9fc"
+                        }}
+                        content={({ active, payload }) => {
+                          const item = payload?.[0]?.payload as
+                            (typeof serieGrafico)[number] | undefined;
 
-                      return (
-                        <circle
-                          key={p.indice}
-                          cx={x}
-                          cy={y}
-                          r="4"
-                          fill="#087d9b"
-                        >
-                          <title>
-                            Intervalo {p.indice + 1}:
-                            {" "}{p.cantidad} eventos
-                          </title>
-                        </circle>
-                      );
-                    })}
-                  </svg>
+                          if (!active || !item) return null;
+
+                          return (
+                            <div className="dash-tooltip">
+                              <strong>
+                                {item.cantidad}
+                                {" "}
+                                {item.cantidad === 1
+                                  ? "sismo"
+                                  : "sismos"}
+                              </strong>
+
+                              <span>
+                                Desde: {item.desde}
+                              </span>
+
+                              <span>
+                                Hasta: {item.hasta}
+                              </span>
+                            </div>
+                          );
+                        }}
+                      />
+
+                      <Bar
+                        dataKey="cantidad"
+                        name="Sismos registrados"
+                        fill="#0da5bd"
+                        radius={[7, 7, 0, 0]}
+                        maxBarSize={48}
+                      >
+                        <LabelList
+                          dataKey="cantidad"
+                          position="top"
+                          fill="#254d67"
+                          fontSize={12}
+                        />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
               ) : (
                 <p className="dash-empty">
-                  No hay eventos para estos filtros.
+                  No hay sismos registrados
+                  en el periodo seleccionado.
                 </p>
               )}
 
-              <div className="dash-chart-foot">
-                <span>Inicio</span>
-                <span>Eventos por intervalo</span>
-                <span>Fin del periodo</span>
-              </div>
+              <p className="dash-chart-description">
+                Cantidad de sismos registrados por intervalo.
+                Horario de Perú.
+              </p>
             </section>
 
             <section className="dash-card">
