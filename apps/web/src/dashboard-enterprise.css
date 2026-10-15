@@ -516,3 +516,46 @@
   font-size: 11px;
   color: #68839a;
 }
+
+/* Filtros del Dashboard */
+.dash-filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+}
+
+.dash-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 15px;
+  min-height: 40px;
+  background: #16c6c1;
+  border: none;
+  border-radius: 10px;
+  color: #063b4c;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.dash-refresh:hover {
+  background: #55e2d7;
+}
+
+.dash-refresh:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+@media (max-width: 600px) {
+  .dash-filter-group {
+    width: 100%;
+  }
+
+  .dash-filter-group .dash-periodo {
+    flex: 1 1 150px;
+    min-width: 0;
+  }
+}

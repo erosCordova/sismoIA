@@ -99,3 +99,6 @@ app.include_router(reports_router)
 
 from app.management import router as management_router
 app.include_router(management_router)
+
+from app.dashboard import router as dashboard_router
+app.include_router(dashboard_router)
