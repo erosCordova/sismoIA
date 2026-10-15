@@ -1,2 +1,133 @@
 .ml-graph{width:100%;height:360px;min-width:0}
 .ml-note{font-size:12px;line-height:1.65;color:#698094;margin-top:15px}
+
+/* SISMOIA - registro, comparación y estimaciones */
+.ml-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 14px;
+}
+
+.ml-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.ml-table th {
+  background: #edf8fc;
+  color: #315a72;
+  text-align: left;
+  padding: 12px;
+  white-space: nowrap;
+}
+
+.ml-table td {
+  border-bottom: 1px solid #eaf0f5;
+  padding: 12px;
+  color: #426377;
+}
+
+.ml-table tbody tr:hover {
+  background: #f7fcfe;
+}
+
+.ml-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.ml-section-head h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ml-section-head p {
+  font-size: 12px;
+  color: #728b9a;
+}
+
+.ml-section-head select {
+  padding: 10px;
+  border: 1px solid #cbdfeb;
+  border-radius: 9px;
+  background: white;
+  color: #27566b;
+}
+
+.ml-run {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 15px;
+  border: 0;
+  border-radius: 10px;
+  background: #0b91b9;
+  color: white;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.ml-run:hover {
+  background: #0eabd1;
+}
+
+.ml-run:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+
+.ml-details {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #dae8f1;
+  border-radius: 10px;
+}
+
+.ml-details summary {
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  color: #28718d;
+}
+
+.ml-json {
+  overflow-x: auto;
+  padding: 12px;
+  background: #f0f7fa;
+  color: #315970;
+  font-size: 11px;
+  border-radius: 8px;
+}
+
+.ml-experimental-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  border: 1px solid #f3dca9;
+  border-radius: 12px;
+  padding: 15px 18px;
+  background: #fffaee;
+  color: #875d17;
+}
+
+.ml-experimental-notice strong {
+  font-size: 13px;
+}
+
+.ml-experimental-notice p {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.ml-small-metric {
+  font-size: 15px !important;
+}
