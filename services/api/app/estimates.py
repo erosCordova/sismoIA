@@ -1,5 +1,6 @@
 import math
 from collections import Counter
+# SISMOIA_OPERACIONES_V4
 from statistics import median
 from typing import Literal
 from fastapi import APIRouter, Depends, Query
@@ -191,6 +192,12 @@ def estimacion_experimental(
         ).isoformat()
 
     return {
+        "tipo_indicador": "Proporción de eventos históricos registrados",
+        "unidad_indicador": "% de registros observados",
+        "modelo_entrenado": False,
+        "dataset_aprobado": False,
+        "resultado_persistido": False,
+        "canal_de_alerta": False,
         "modelo": "Frecuencia histórica observada",
         "version_modelo": "OBS-WILSON-1.0",
         "metodo": (

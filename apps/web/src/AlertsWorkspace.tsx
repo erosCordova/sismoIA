@@ -31,6 +31,8 @@ type Alerta = {
   estado: string;
   severidad: string;
   fuente: string;
+  titulo?: string;
+  mensaje?: string;
   magnitud: number;
   profundidad_km: number | null;
   lugar: string | null;
@@ -61,6 +63,10 @@ type Detalle = Alerta & {
     canal: string | null;
     destinatarios: string[] | null;
     entregada_utc: string | null;
+    intentos?: number;
+    ultimo_intento_utc?: string | null;
+    error?: string | null;
+    acuse?: string | null;
   };
 };
 
@@ -72,6 +78,7 @@ type Resumen = {
   reglas_activas: number;
   reglas_totales: number;
   envio_externo: boolean;
+  por_severidad?: Record<string, number>;
 };
 
 type Bandeja = {
@@ -89,6 +96,8 @@ type Simulacion = {
   coincidencias: number;
   consulta_limitada: boolean;
   por_fuente: Record<string, number>;
+  por_severidad?: Record<string, number>;
+  fuente_permitida?: string | null;
   muestra: {
     id: string;
     fecha_utc: string;
@@ -173,6 +182,22 @@ export default function AlertsWorkspace({
   const [estado, setEstado] = useState("");
   const [severidad, setSeveridad] = useState("");
   const [fuente, setFuente] = useState("");
+
+  const [fuenteSimulacion, setFuenteSimulacion] =
+    useState("");
+
+  const [buscar, setBuscar] = useState("");
+  const [magnitudBusqueda, setMagnitudBusqueda] =
+    useState("");
+  const [desde, setDesde] = useState("");
+  const [hasta, setHasta] = useState("");
+
+  const [consulta, setConsulta] = useState({
+    q: "",
+    magnitud_min: "",
+    desde: "",
+    hasta: ""
+  });
   const [pagina, setPagina] = useState(1);
   const [paginas, setPaginas] = useState(1);
   const [totalFiltrado, setTotalFiltrado] = useState(0);
@@ -250,7 +275,15 @@ export default function AlertsWorkspace({
 
           if (estado) params.set("estado", estado);
           if (severidad) params.set("severidad", severidad);
-          if (fuente) params.set("fuente", fuente);
+          if (fuente) {
+            params.set("fuente", fuente);
+          }
+
+          Object.entries(consulta).forEach(
+            ([clave, valor]) => {
+              if (valor) params.set(clave, valor);
+            }
+          );
 
           const [r, s] = await Promise.all([
             api(`/inbox?${params}`),
@@ -299,7 +332,7 @@ export default function AlertsWorkspace({
 
   }, [
     token, seccion, estado, severidad,
-    fuente, pagina, revision, auditar
+    fuente, pagina, revision, auditar, consulta
   ]);
 
   useEffect(() => {
@@ -429,7 +462,8 @@ export default function AlertsWorkspace({
             method: "POST",
             body: JSON.stringify({
               ...payload(f),
-              dias: Number(f.dias)
+              dias: Number(f.dias),
+              fuente_permitida: fuenteSimulacion || null
             })
           }
         );
@@ -590,6 +624,29 @@ export default function AlertsWorkspace({
         </article>
       </div>
 
+      <div className="ops-alert-strip" role="status">
+        <span>
+          <b>Envío externo:</b>{" "}
+          {resumen?.envio_externo
+            ? "Integración disponible"
+            : "No implementado"}
+        </span>
+
+        <span>
+          <b>Alertas críticas:</b>{" "}
+          {numero(resumen?.por_severidad?.critical ?? 0)}
+        </span>
+
+        <span>
+          <b>Advertencias:</b>{" "}
+          {numero(resumen?.por_severidad?.warning ?? 0)}
+        </span>
+
+        <span>
+          <b>Deduplicación:</b> evento y regla
+        </span>
+      </div>
+
       {seccion === "reglas" ? (
         <>
           {administrar && (
@@ -670,6 +727,26 @@ export default function AlertsWorkspace({
                   </select>
                 </label>
 
+                <label>
+                  Fuente de la simulación
+                  <select
+                    value={fuenteSimulacion}
+                    onChange={e =>
+                      setFuenteSimulacion(e.target.value)
+                    }
+                  >
+                    <option value="">
+                      Todas las fuentes
+                    </option>
+                    <option value="IGP">IGP</option>
+                    <option value="USGS">USGS</option>
+                  </select>
+                  <small>
+                    Este filtro solo se aplica a la
+                    simulación. No se guarda en la regla.
+                  </small>
+                </label>
+
                 <label className="alrt-check">
                   <input
                     type="checkbox"
@@ -731,6 +808,19 @@ export default function AlertsWorkspace({
                   </strong>
                 </article>
               </div>
+
+              <p className="ops-chart-foot">
+                Fuente simulada:{" "}
+                {simulacion.fuente_permitida ||
+                  "Todas las fuentes"}
+                {" · "}
+                Críticas (M 6+):{" "}
+                {simulacion.por_severidad?.critical ?? 0}
+                {" · "}
+                Advertencias:{" "}
+                {simulacion.por_severidad?.warning ?? 0}.
+                Este filtro no se persiste.
+              </p>
 
               {simulacion.consulta_limitada && (
                 <p className="prep-loading">
@@ -911,7 +1001,30 @@ export default function AlertsWorkspace({
               </span>
             </div>
 
-            <div className="alrt-filters">
+            <form
+              className="alrt-filters ops-alert-filters"
+              onSubmit={e => {
+                e.preventDefault();
+
+                if (desde && hasta && desde > hasta) {
+                  setError(
+                    "La fecha inicial supera la final."
+                  );
+                  return;
+                }
+
+                setError("");
+
+                setConsulta({
+                  q: buscar.trim(),
+                  magnitud_min: magnitudBusqueda,
+                  desde,
+                  hasta
+                });
+
+                setPagina(1);
+              }}
+            >
               <label>
                 Estado
                 <select
@@ -967,7 +1080,79 @@ export default function AlertsWorkspace({
                   <option value="IGP">IGP</option>
                 </select>
               </label>
-            </div>
+
+              <label>
+                Buscar regla, localidad o ID
+                <input
+                  type="search"
+                  maxLength={100}
+                  value={buscar}
+                  onChange={e => setBuscar(e.target.value)}
+                  placeholder="Ej. Lima"
+                />
+              </label>
+
+              <label>
+                Magnitud mínima
+                <input
+                  type="number"
+                  min="0"
+                  max="9.9"
+                  step="0.1"
+                  value={magnitudBusqueda}
+                  onChange={e =>
+                    setMagnitudBusqueda(e.target.value)
+                  }
+                  placeholder="Cualquiera"
+                />
+              </label>
+
+              <label>
+                Desde (UTC)
+                <input
+                  type="date"
+                  value={desde}
+                  onChange={e => setDesde(e.target.value)}
+                />
+              </label>
+
+              <label>
+                Hasta (UTC)
+                <input
+                  type="date"
+                  value={hasta}
+                  onChange={e => setHasta(e.target.value)}
+                />
+              </label>
+
+              <button
+                type="submit"
+                disabled={cargando}
+              >
+                Buscar en PostgreSQL
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setBuscar("");
+                  setMagnitudBusqueda("");
+                  setDesde("");
+                  setHasta("");
+
+                  setConsulta({
+                    q: "",
+                    magnitud_min: "",
+                    desde: "",
+                    hasta: ""
+                  });
+
+                  setPagina(1);
+                }}
+              >
+                Limpiar búsqueda
+              </button>
+            </form>
 
             <div className="prep-table-wrap">
               <table className="prep-table">
@@ -1168,6 +1353,15 @@ export default function AlertsWorkspace({
                   {[
                     ["ID de alerta", detalle.id],
                     ["Regla aplicada", detalle.regla],
+                    [
+                      "Título del aviso interno",
+                      detalle.titulo || "Evento observado"
+                    ],
+                    [
+                      "Mensaje interno",
+                      detalle.mensaje ||
+                        "Sin plantilla de mensaje"
+                    ],
                     ["Severidad", estadoNombre(detalle.severidad)],
                     ["Estado", estadoNombre(detalle.estado)],
                     ["Fuente", detalle.fuente],
@@ -1193,11 +1387,39 @@ export default function AlertsWorkspace({
                     ["Longitud", String(detalle.longitud)],
                     [
                       "Canal de entrega",
-                      "No configurado"
+                      detalle.entrega.canal || "No configurado"
                     ],
                     [
                       "Estado de envío",
-                      "No implementado"
+                      detalle.entrega.estado ===
+                        "no_implementada"
+                        ? "No implementado"
+                        : detalle.entrega.estado
+                    ],
+                    [
+                      "Destinatarios",
+                      detalle.entrega.destinatarios?.join(", ")
+                        || "No configurados"
+                    ],
+                    [
+                      "Intentos de entrega",
+                      String(detalle.entrega.intentos ?? 0)
+                    ],
+                    [
+                      "Último intento",
+                      fecha(detalle.entrega.ultimo_intento_utc)
+                    ],
+                    [
+                      "Fecha de entrega",
+                      fecha(detalle.entrega.entregada_utc)
+                    ],
+                    [
+                      "Error",
+                      detalle.entrega.error || "Sin intentos"
+                    ],
+                    [
+                      "Acuse",
+                      detalle.entrega.acuse || "No disponible"
                     ]
                   ].map(([nombre, valor]) => (
                     <div
@@ -1218,7 +1440,7 @@ export default function AlertsWorkspace({
                     rel="noopener noreferrer"
                   >
                     <ExternalLink size={16}/>
-                    Consultar registro oficial de origen
+                    Consultar registro del proveedor de origen
                   </a>
                 )}
 

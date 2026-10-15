@@ -12,6 +12,7 @@ import {
 import {TokenContext} from "./AuthGate";
 import "./preparation.css";
 import "./models.css";
+import "./alerts-enterprise.css";
 
 type Serie = {
   etiqueta: string;
@@ -20,6 +21,11 @@ type Serie = {
 
 type Estimacion = {
   modelo: string;
+  tipo_indicador?: string;
+  unidad_indicador?: string;
+  modelo_entrenado?: boolean;
+  dataset_aprobado?: boolean;
+  resultado_persistido?: boolean;
   version_modelo: string;
   metodo: string;
   fuente: string;
@@ -219,6 +225,55 @@ export default function EstimatesWorkspace({
 
       {datos && (
         <>
+          <div className="ops-estimate-strip" role="status">
+            <span>
+              <b>Indicador:</b>{" "}
+              {datos.tipo_indicador ||
+                "Frecuencia histórica observada"}
+            </span>
+
+            <span>
+              <b>Unidad:</b>{" "}
+              {datos.unidad_indicador ||
+                "% de registros"}
+            </span>
+
+            <span>
+              <b>Corte:</b>{" "}
+              {fecha(datos.fecha_calculo_utc)}
+            </span>
+
+            <span>
+              <b>Fuente:</b> {datos.fuente}
+            </span>
+
+            <span>
+              <b>Ventana:</b> {datos.ventana_dias} días
+            </span>
+
+            <span>
+              <b>Muestra:</b>{" "}
+              {numero(datos.total_registros)}
+            </span>
+          </div>
+
+          <div className="ops-notice">
+            <strong>
+              Estado: sin revisión ni aprobación formal.
+            </strong>
+            Este resultado es descriptivo, no procede de
+            un modelo entrenado y no genera alertas
+            oficiales. Los porcentajes describen solamente
+            el catálogo consultado.
+          </div>
+
+          {datos.total_registros === 0 && (
+            <p className="prep-loading" role="status">
+              No existen eventos para el periodo y
+              fuente seleccionados.
+            </p>
+          )}
+
           <div className="prep-metrics">
             <article>
               <span>Registros del periodo</span>
@@ -296,6 +351,13 @@ export default function EstimatesWorkspace({
                   </BarChart>
                 </ResponsiveContainer>
               </div>
+
+              <p className="ops-chart-foot">
+                Magnitud observada · Conteo de registros ·
+                Fuente: {datos.fuente} ·
+                Muestra: {numero(datos.total_registros)} ·
+                Corte: {fecha(datos.fecha_calculo_utc)}
+              </p>
             </article>
 
             <article className="prep-card">
@@ -328,6 +390,14 @@ export default function EstimatesWorkspace({
                   </LineChart>
                 </ResponsiveContainer>
               </div>
+
+              <p className="ops-chart-foot">
+                Eje X: mes UTC ·
+                Eje Y: eventos registrados ·
+                Fuente: {datos.fuente} ·
+                Periodo: {datos.ventana_dias} días ·
+                Corte: {fecha(datos.fecha_calculo_utc)}
+              </p>
             </article>
           </div>
 

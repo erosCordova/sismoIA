@@ -34,3 +34,95 @@
 .alrt-source-link{display:inline-flex;align-items:center;gap:7px;color:#087e9d;font-size:12px;font-weight:800;margin:5px 0 18px}
 @media(max-width:1000px){.alrt-form{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){.alrt-form,.alrt-filters,.alrt-detail-grid{grid-template-columns:1fr}.alrt-dialog{padding:16px}}
+
+/* SISMOIA_OPERACIONES_V4 */
+
+.ops-estimate-strip,
+.ops-alert-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 17px;
+  margin: 15px 0;
+  padding: 12px 14px;
+  background: #edf8fc;
+  border: 1px solid #d1e9f2;
+  border-radius: 10px;
+  color: #527589;
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+.ops-estimate-strip b,
+.ops-alert-strip b {
+  color: #214b64;
+}
+
+.ops-notice {
+  margin: 12px 0 17px;
+  padding: 12px 15px;
+  background: #fff9ed;
+  border: 1px solid #efdfb9;
+  border-radius: 10px;
+  color: #775c28;
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.ops-notice strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.ops-chart-foot {
+  margin: 10px 0 0;
+  color: #758da0;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.ops-alert-filters {
+  grid-template-columns: repeat(
+    4,
+    minmax(0, 1fr)
+  );
+}
+
+.ops-alert-filters input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #cddfeb;
+  border-radius: 9px;
+  background: #fbfdff;
+  color: #204e66;
+  padding: 11px;
+}
+
+.ops-alert-filters button {
+  padding: 10px;
+  background: #edf8fb;
+  color: #166a87;
+  border: 1px solid #bcdce9;
+  border-radius: 9px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ops-alert-filters button[type=submit] {
+  background: #087fa9;
+  color: white;
+}
+
+@media (max-width: 1100px) {
+  .ops-alert-filters {
+    grid-template-columns: repeat(
+      2,
+      minmax(0, 1fr)
+    );
+  }
+}
+
+@media (max-width: 650px) {
+  .ops-alert-filters {
+    grid-template-columns: 1fr;
+  }
+}

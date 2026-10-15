@@ -1,10 +1,11 @@
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
+# SISMOIA_OPERACIONES_V4
 from decimal import Decimal
 from typing import Literal
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from app.access import requerir_permiso
@@ -185,6 +186,12 @@ def alerta_extendida(alerta, regla, evento, fuente):
         "evento_id": str(evento.id),
         "regla": regla.name,
         "estado": alerta.status,
+        "titulo": f"Evento observado M{float(evento.magnitude):.1f}",
+        "mensaje": (
+            f"Registro de {fuente}: magnitud {float(evento.magnitude):.1f}, "
+            f"ubicación {evento.place or 'no especificada'}. "
+            "Aviso interno no oficial."
+        ),
         "severidad": alerta.severity,
         "fuente": fuente,
         "id_externo": evento.external_id,
@@ -219,6 +226,10 @@ def alerta_extendida(alerta, regla, evento, fuente):
             "canal": None,
             "destinatarios": None,
             "entregada_utc": None,
+            "intentos": 0,
+            "ultimo_intento_utc": None,
+            "error": None,
+            "acuse": None,
         },
     }
 
@@ -288,11 +299,49 @@ def bandeja_alertas(
         "warning", "critical"
     ] | None = None,
     fuente: Literal["USGS", "IGP"] | None = None,
+    q: str | None = Query(None, max_length=100),
+    magnitud_min: float | None = Query(None, ge=0, le=9.9),
+    desde: date | None = None,
+    hasta: date | None = None,
     pagina: int = Query(1, ge=1),
     limite: int = Query(25, ge=1, le=100),
     usuario=Depends(requerir_permiso("alerts:read")),
 ):
+    if desde and hasta and desde > hasta:
+        raise HTTPException(
+            422, "La fecha inicial supera la fecha final"
+        )
+
     condiciones = []
+
+    if q and q.strip():
+        patron = "%" + q.strip() + "%"
+        condiciones.append(or_(
+            AlertRule.name.ilike(patron),
+            SeismicEvent.place.ilike(patron),
+            SeismicEvent.external_id.ilike(patron),
+        ))
+
+    if magnitud_min is not None:
+        condiciones.append(
+            SeismicEvent.magnitude >= magnitud_min
+        )
+
+    if desde:
+        condiciones.append(
+            SeismicEvent.occurred_at >= datetime.combine(
+                desde, time.min, tzinfo=timezone.utc
+            )
+        )
+
+    if hasta:
+        condiciones.append(
+            SeismicEvent.occurred_at < datetime.combine(
+                hasta + timedelta(days=1),
+                time.min,
+                tzinfo=timezone.utc
+            )
+        )
 
     if estado:
         condiciones.append(
@@ -464,6 +513,7 @@ def detalle_operativo_alerta(
 
 
 class SimulacionRegla(NuevaRegla):
+    fuente_permitida: Literal["IGP", "USGS"] | None = None
     dias: int = Field(
         default=7,
         ge=1,
@@ -481,6 +531,17 @@ def simular_regla(
     ahora = datetime.now(timezone.utc)
     desde = ahora - timedelta(days=datos.dias)
 
+    condiciones_simulacion = [
+        SeismicEvent.occurred_at >= desde,
+        SeismicEvent.occurred_at <= ahora,
+        SeismicEvent.magnitude >= datos.magnitud_minima,
+    ]
+
+    if datos.fuente_permitida:
+        condiciones_simulacion.append(
+            DataSource.name == datos.fuente_permitida
+        )
+
     with Session(engine) as db:
         filas = db.execute(
             select(
@@ -491,11 +552,7 @@ def simular_regla(
                 DataSource,
                 DataSource.id == SeismicEvent.source_id
             )
-            .where(
-                SeismicEvent.occurred_at >= desde,
-                SeismicEvent.occurred_at <= ahora,
-                SeismicEvent.magnitude >= datos.magnitud_minima,
-            )
+            .where(*condiciones_simulacion)
             .order_by(
                 SeismicEvent.occurred_at.desc()
             )
@@ -507,6 +564,7 @@ def simular_regla(
 
     coincidencias = []
     fuentes = Counter()
+    severidades = Counter()
 
     for evento, fuente in filas:
         lat = float(evento.latitude)
@@ -529,6 +587,12 @@ def simular_regla(
                 continue
 
         fuentes[fuente] += 1
+
+        severidades[
+            "critical"
+            if float(evento.magnitude) >= 6
+            else "warning"
+        ] += 1
 
         coincidencias.append({
             "id": str(evento.id),
@@ -554,6 +618,9 @@ def simular_regla(
         "coincidencias": len(coincidencias),
         "consulta_limitada": limitada,
         "por_fuente": dict(fuentes),
+        "por_severidad": dict(severidades),
+        "fuente_permitida": datos.fuente_permitida,
+        "guarda_configuracion_de_envio": False,
         "muestra": coincidencias[:10],
         "fecha_simulacion_utc": fecha_alerta(
             ahora
