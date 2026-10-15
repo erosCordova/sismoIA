@@ -2,6 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
 import { Activity, RefreshCw, MapPinned } from "lucide-react";
 import { TokenContext, UsuarioContext } from "./AuthGate";
+import SismoiaDashboard from "./SismoiaDashboard";
 import "leaflet/dist/leaflet.css";
 import "./seismic.css";
 
@@ -45,7 +46,7 @@ export default function SeismicWorkspace({ modo, peru }: { modo: Modo; peru: boo
     setError("");
     try {
       const parametros = new URLSearchParams({
-        peru: String(peru), limit: modo === "mapa" ? "500" : "100", offset: String(pagina * (modo === "mapa" ? 500 : 100))
+        peru: String(peru), limit: modo === "mapa" || modo === "dashboard" ? "500" : "100", offset: String(pagina * (modo === "mapa" ? 500 : 100))
       });
       if (magnitud) parametros.set("min_magnitude", magnitud);
       if (fuente) parametros.set("fuente", fuente);
@@ -138,14 +139,22 @@ export default function SeismicWorkspace({ modo, peru }: { modo: Modo; peru: boo
       {aviso && <p className="seis-notice" role="status">{aviso}</p>}
       {cargando && <p className="seis-notice">Cargando datos sísmicos...</p>}
 
-      <div className="seis-stats">
+      {modo !== "dashboard" && <div className="seis-stats">
         <article><span>Eventos en la consulta</span><strong>{total.toLocaleString("es-PE")}</strong></article>
         <article><span>Eventos registrados mundialmente</span><strong>{(estadisticas?.total_eventos ?? 0).toLocaleString("es-PE")}</strong></article>
         <article><span>Eventos en la zona de Perú</span><strong>{(estadisticas?.eventos_peru ?? 0).toLocaleString("es-PE")}</strong></article>
         <article><span>Magnitud máxima registrada</span><strong>{estadisticas?.magnitud_maxima?.toFixed(1) ?? "—"}</strong></article>
-      </div>
+      </div>}
 
-      {modo === "mapa" ? (
+      {modo === "dashboard" ? (
+        <SismoiaDashboard
+          eventos={eventos}
+          total={total}
+          estadisticas={estadisticas}
+          peru={peru}
+          cargando={cargando}
+        />
+      ) : modo === "mapa" ? (
         <div className="seis-surface">
           <h3><MapPinned size={19} /> Epicentros registrados · {eventos.length} visibles</h3>
           <div className="seis-map">
@@ -170,12 +179,12 @@ export default function SeismicWorkspace({ modo, peru }: { modo: Modo; peru: boo
         </div>
       ) : (
         <div className="seis-surface">
-          <h3>{modo === "dashboard" ? "Eventos sísmicos recientes" : "Catálogo de terremotos"}</h3>
+          <h3>Catálogo de terremotos</h3>
           <div className="seis-table-scroll">
             <table className="seis-table">
               <thead><tr><th>Fecha y hora</th><th>Lugar</th><th>Magnitud</th><th>Profundidad</th><th>Coordenadas</th><th>Fuente</th></tr></thead>
               <tbody>
-                {eventos.slice(0, modo === "dashboard" ? 12 : 100).map(e => (
+                {eventos.slice(0, 100).map(e => (
                   <tr key={e.id}>
                     <td>{fecha(e.fecha_utc)}</td>
                     <td>{e.url ? <a href={e.url} target="_blank" rel="noopener noreferrer">{e.lugar || "Sin descripción"}</a> : e.lugar || "Sin descripción"}</td>
