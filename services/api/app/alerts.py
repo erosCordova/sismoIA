@@ -160,3 +160,410 @@ def historial(usuario=Depends(requerir_permiso("audit:read"))):
         return {"acciones": [{"id": str(a.id), "accion": a.action,
             "detalle": a.details, "fecha_utc": a.created_at.isoformat()}
             for a in acciones]}
+
+
+# SISMOIA_ALERTAS_OPERATIVAS_V2
+# Ampliaciones de solo lectura, simulación y trazabilidad.
+# No ejecutan entregas externas.
+
+from collections import Counter
+from sqlalchemy import case, func
+
+
+def fecha_alerta(valor):
+    if valor is None:
+        return None
+    if valor.tzinfo is None:
+        valor = valor.replace(tzinfo=timezone.utc)
+    return valor.astimezone(timezone.utc).isoformat()
+
+
+def alerta_extendida(alerta, regla, evento, fuente):
+    return {
+        "id": str(alerta.id),
+        "regla_id": str(regla.id),
+        "evento_id": str(evento.id),
+        "regla": regla.name,
+        "estado": alerta.status,
+        "severidad": alerta.severity,
+        "fuente": fuente,
+        "id_externo": evento.external_id,
+        "magnitud": float(evento.magnitude),
+        "tipo_magnitud": evento.magnitude_type,
+        "profundidad_km": (
+            float(evento.depth_km)
+            if evento.depth_km is not None else None
+        ),
+        "latitud": float(evento.latitude),
+        "longitud": float(evento.longitude),
+        "lugar": evento.place,
+        "url_fuente": evento.source_url,
+        "fecha_evento_utc": fecha_alerta(
+            evento.occurred_at
+        ),
+        "fecha_recepcion_utc": fecha_alerta(
+            evento.received_at
+        ),
+        "creada_utc": fecha_alerta(
+            alerta.created_at
+        ),
+        "revisada_utc": fecha_alerta(
+            alerta.reviewed_at
+        ),
+        "revisor_id": (
+            str(alerta.reviewed_by)
+            if alerta.reviewed_by else None
+        ),
+        "entrega": {
+            "estado": "no_implementada",
+            "canal": None,
+            "destinatarios": None,
+            "entregada_utc": None,
+        },
+    }
+
+
+@router.get("/summary")
+def resumen_operativo_alertas(
+    usuario=Depends(requerir_permiso("alerts:read")),
+):
+    with Session(engine) as db:
+        estados = db.execute(
+            select(
+                SeismicAlert.status,
+                func.count(SeismicAlert.id)
+            )
+            .group_by(SeismicAlert.status)
+        ).all()
+
+        severidades = db.execute(
+            select(
+                SeismicAlert.severity,
+                func.count(SeismicAlert.id)
+            )
+            .group_by(SeismicAlert.severity)
+        ).all()
+
+        reglas_activas = db.scalar(
+            select(func.count(AlertRule.id))
+            .where(AlertRule.enabled.is_(True))
+        ) or 0
+
+        reglas_totales = db.scalar(
+            select(func.count(AlertRule.id))
+        ) or 0
+
+    conteos = {
+        str(estado): int(cantidad)
+        for estado, cantidad in estados
+    }
+
+    por_severidad = {
+        str(severidad): int(cantidad)
+        for severidad, cantidad in severidades
+    }
+
+    return {
+        "total": sum(conteos.values()),
+        "pendientes": conteos.get("pending", 0),
+        "aprobadas": conteos.get("approved", 0),
+        "descartadas": conteos.get("dismissed", 0),
+        "por_estado": conteos,
+        "por_severidad": por_severidad,
+        "reglas_activas": int(reglas_activas),
+        "reglas_totales": int(reglas_totales),
+        "calculado_utc": datetime.now(
+            timezone.utc
+        ).isoformat(),
+        "envio_externo": False,
+    }
+
+
+@router.get("/inbox")
+def bandeja_alertas(
+    estado: Literal[
+        "pending", "approved", "dismissed"
+    ] | None = None,
+    severidad: Literal[
+        "warning", "critical"
+    ] | None = None,
+    fuente: Literal["USGS", "IGP"] | None = None,
+    pagina: int = Query(1, ge=1),
+    limite: int = Query(25, ge=1, le=100),
+    usuario=Depends(requerir_permiso("alerts:read")),
+):
+    condiciones = []
+
+    if estado:
+        condiciones.append(
+            SeismicAlert.status == estado
+        )
+
+    if severidad:
+        condiciones.append(
+            SeismicAlert.severity == severidad
+        )
+
+    if fuente:
+        condiciones.append(
+            DataSource.name == fuente
+        )
+
+    base = (
+        select(SeismicAlert.id)
+        .select_from(SeismicAlert)
+        .join(
+            AlertRule,
+            AlertRule.id == SeismicAlert.rule_id
+        )
+        .join(
+            SeismicEvent,
+            SeismicEvent.id == SeismicAlert.event_id
+        )
+        .join(
+            DataSource,
+            DataSource.id == SeismicEvent.source_id
+        )
+        .where(*condiciones)
+    )
+
+    prioridad_estado = case(
+        (SeismicAlert.status == "pending", 0),
+        (SeismicAlert.status == "approved", 1),
+        else_=2,
+    )
+
+    prioridad_severidad = case(
+        (SeismicAlert.severity == "critical", 0),
+        else_=1,
+    )
+
+    consulta = (
+        select(
+            SeismicAlert,
+            AlertRule,
+            SeismicEvent,
+            DataSource.name,
+        )
+        .select_from(SeismicAlert)
+        .join(
+            AlertRule,
+            AlertRule.id == SeismicAlert.rule_id
+        )
+        .join(
+            SeismicEvent,
+            SeismicEvent.id == SeismicAlert.event_id
+        )
+        .join(
+            DataSource,
+            DataSource.id == SeismicEvent.source_id
+        )
+        .where(*condiciones)
+        .order_by(
+            prioridad_estado,
+            prioridad_severidad,
+            SeismicAlert.created_at.desc(),
+            SeismicAlert.id.desc(),
+        )
+        .offset((pagina - 1) * limite)
+        .limit(limite)
+    )
+
+    with Session(engine) as db:
+        total = db.scalar(
+            select(func.count())
+            .select_from(base.subquery())
+        ) or 0
+
+        filas = db.execute(consulta).all()
+
+    return {
+        "total": int(total),
+        "pagina": pagina,
+        "limite": limite,
+        "paginas": max(
+            1,
+            (int(total) + limite - 1) // limite
+        ),
+        "alertas": [
+            alerta_extendida(a, r, e, nombre)
+            for a, r, e, nombre in filas
+        ],
+        "actualizado_utc": datetime.now(
+            timezone.utc
+        ).isoformat(),
+    }
+
+
+@router.get("/inbox/{alert_id}")
+def detalle_operativo_alerta(
+    alert_id: UUID,
+    usuario=Depends(requerir_permiso("alerts:read")),
+):
+    with Session(engine) as db:
+        fila = db.execute(
+            select(
+                SeismicAlert,
+                AlertRule,
+                SeismicEvent,
+                DataSource.name,
+            )
+            .select_from(SeismicAlert)
+            .join(
+                AlertRule,
+                AlertRule.id == SeismicAlert.rule_id
+            )
+            .join(
+                SeismicEvent,
+                SeismicEvent.id == SeismicAlert.event_id
+            )
+            .join(
+                DataSource,
+                DataSource.id == SeismicEvent.source_id
+            )
+            .where(SeismicAlert.id == alert_id)
+        ).first()
+
+        if fila is None:
+            raise HTTPException(
+                404,
+                "Alerta no encontrada"
+            )
+
+        alerta, regla, evento, fuente = fila
+
+        acciones = db.scalars(
+            select(AlertAction)
+            .where(AlertAction.alert_id == alert_id)
+            .order_by(
+                AlertAction.created_at.desc()
+            )
+            .limit(50)
+        ).all()
+
+        respuesta = alerta_extendida(
+            alerta, regla, evento, fuente
+        )
+
+        respuesta["regla_configuracion"] = regla_json(
+            regla
+        )
+
+        respuesta["historial"] = [
+            {
+                "accion": accion.action,
+                "detalle": accion.details,
+                "fecha_utc": fecha_alerta(
+                    accion.created_at
+                ),
+            }
+            for accion in acciones
+        ]
+
+        return respuesta
+
+
+class SimulacionRegla(NuevaRegla):
+    dias: int = Field(
+        default=7,
+        ge=1,
+        le=30,
+    )
+
+
+@router.post("/simulate")
+def simular_regla(
+    datos: SimulacionRegla,
+    usuario=Depends(
+        requerir_permiso("rules:manage")
+    ),
+):
+    ahora = datetime.now(timezone.utc)
+    desde = ahora - timedelta(days=datos.dias)
+
+    with Session(engine) as db:
+        filas = db.execute(
+            select(
+                SeismicEvent,
+                DataSource.name,
+            )
+            .join(
+                DataSource,
+                DataSource.id == SeismicEvent.source_id
+            )
+            .where(
+                SeismicEvent.occurred_at >= desde,
+                SeismicEvent.occurred_at <= ahora,
+                SeismicEvent.magnitude >= datos.magnitud_minima,
+            )
+            .order_by(
+                SeismicEvent.occurred_at.desc()
+            )
+            .limit(5001)
+        ).all()
+
+    limitada = len(filas) > 5000
+    filas = filas[:5000]
+
+    coincidencias = []
+    fuentes = Counter()
+
+    for evento, fuente in filas:
+        lat = float(evento.latitude)
+        lon = float(evento.longitude)
+
+        if datos.solo_peru and not (
+            -19 <= lat <= 1
+            and -82 <= lon <= -68
+        ):
+            continue
+
+        if datos.profundidad_maxima is not None:
+            if evento.depth_km is None:
+                continue
+
+            if (
+                float(evento.depth_km)
+                > datos.profundidad_maxima
+            ):
+                continue
+
+        fuentes[fuente] += 1
+
+        coincidencias.append({
+            "id": str(evento.id),
+            "fecha_utc": fecha_alerta(
+                evento.occurred_at
+            ),
+            "fuente": fuente,
+            "magnitud": float(
+                evento.magnitude
+            ),
+            "profundidad_km": (
+                float(evento.depth_km)
+                if evento.depth_km is not None
+                else None
+            ),
+            "lugar": evento.place,
+        })
+
+    return {
+        "nombre": datos.nombre,
+        "periodo_dias": datos.dias,
+        "eventos_examinados": len(filas),
+        "coincidencias": len(coincidencias),
+        "consulta_limitada": limitada,
+        "por_fuente": dict(fuentes),
+        "muestra": coincidencias[:10],
+        "fecha_simulacion_utc": fecha_alerta(
+            ahora
+        ),
+        "modo": "simulacion_sin_escritura",
+        "advertencia": (
+            "La simulación no crea ni aprueba alertas, "
+            "no modifica reglas y no envía notificaciones. "
+            "Las coincidencias son registros históricos, "
+            "no pronósticos de terremotos. Si la consulta "
+            "está limitada, el conteo es parcial."
+        ),
+    }
