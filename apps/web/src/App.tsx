@@ -44,7 +44,7 @@ const grupos = [
   "Administración"
 ];
 
-const SeismicWorkspace = lazy(() => import("./SeismicWorkspace"));
+const CatalogWorkspace = lazy(() => import("./CatalogWorkspace"));
 const SismoiaDashboard = lazy(() => import("./SismoiaDashboard"));
 const PreparationWorkspace = lazy(() => import("./PreparationWorkspace"));
 const AnalyticsWorkspace = lazy(() => import("./AnalyticsWorkspace"));
@@ -172,7 +172,7 @@ function Plataforma() {
     <SismoiaDashboard peru={cobertura === "Perú"} />
   </Suspense>
 ) : ["/eventos", "/mapa"].includes(modulo.ruta) ? (
-<Suspense fallback={<p>Cargando módulo...</p>}><SeismicWorkspace modo={modulo.ruta === "/" ? "dashboard" : modulo.ruta === "/mapa" ? "mapa" : "eventos"} peru={cobertura === "Perú"} /></Suspense>
+<Suspense fallback={<p>Cargando módulo...</p>}><CatalogWorkspace modo={modulo.ruta === "/mapa" ? "mapa" : "eventos"} peru={cobertura === "Perú"} /></Suspense>
 ) : modulo.ruta === "/" ? (
             <>
               <section className="hero">

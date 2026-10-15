@@ -102,3 +102,6 @@ app.include_router(management_router)
 
 from app.dashboard import router as dashboard_router
 app.include_router(dashboard_router)
+
+from app.catalog import router as catalog_router
+app.include_router(catalog_router)
