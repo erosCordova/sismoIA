@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import create_engine, text
@@ -11,7 +12,7 @@ class Settings(BaseSettings):
     database_url: str
 
     model_config = SettingsConfigDict(
-        env_file=ROOT / ".env",
+        env_file=ROOT / (".env.supabase" if os.getenv("SISMOIA_TARGET") == "supabase" else ".env"),
         extra="ignore",
     )
 

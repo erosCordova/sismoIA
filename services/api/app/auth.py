@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+import os
 from uuid import UUID
 import jwt
 from fastapi import APIRouter, Depends, HTTPException
@@ -15,7 +16,7 @@ from app.permissions import tiene_permiso, PERMISOS
 
 class JWTConfig(BaseSettings):
     jwt_secret_key: str
-    model_config = SettingsConfigDict(env_file=Path(__file__).resolve().parents[3] / ".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=Path(__file__).resolve().parents[3] / (".env.supabase" if os.getenv("SISMOIA_TARGET") == "supabase" else ".env"), extra="ignore")
 
 config = JWTConfig()
 if len(config.jwt_secret_key) < 48:

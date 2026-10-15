@@ -13,7 +13,7 @@ router = APIRouter(prefix="/api/v1/admin", tags=["Usuarios"])
 class UsuarioNuevo(BaseModel):
     nombre: str = Field(min_length=2, max_length=180)
     email: str = Field(min_length=5, max_length=255)
-    password: str = Field(min_length=12, max_length=128)
+    password: str = Field(min_length=8, max_length=128)
     rol: str
 
 @router.post("/users", status_code=201)

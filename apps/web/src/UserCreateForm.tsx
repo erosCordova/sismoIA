@@ -70,8 +70,8 @@ export default function UserCreateForm({ roles, onCreated }: Props) {
           onChange={e => setEmail(e.target.value)} placeholder="usuario@empresa.com" autoComplete="off"/>
       </label>
       <label>Contraseña temporal
-        <input required type="password" minLength={12} value={password}
-          onChange={e => setPassword(e.target.value)} placeholder="Mínimo 12 caracteres" autoComplete="new-password"/>
+        <input required type="password" minLength={8} value={password}
+          onChange={e => setPassword(e.target.value)} placeholder="Mínimo 8 caracteres" autoComplete="new-password"/>
       </label>
       <label>Rol de acceso
         <select required value={rol} onChange={e => setRol(e.target.value)}>

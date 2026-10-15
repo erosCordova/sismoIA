@@ -28,3 +28,6 @@ logs/
 *.p12
 *.pfx
 services/api/tests/sismoia_sesion.txt
+
+.env.local
+.env.supabase
