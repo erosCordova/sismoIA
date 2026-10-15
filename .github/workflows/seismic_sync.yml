@@ -1,0 +1,38 @@
+name: SISMOIA - Sincronizacion automatica
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sismoia-seismic-sync
+  cancel-in-progress: false
+
+jobs:
+  sincronizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      DATABASE_URL: ${{ secrets.SISMOIA_DATABASE_URL }}
+      JWT_SECRET_KEY: ${{ secrets.SISMOIA_JWT_SECRET_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: services/api/requirements.txt
+      - name: Validar configuracion
+        run: |
+          if [ -z "$DATABASE_URL" ] || [ -z "$JWT_SECRET_KEY" ]; then
+            echo "ERROR=FALTAN_SECRETOS_GITHUB"
+            exit 1
+          fi
+      - name: Instalar dependencias
+        run: python -m pip install -r services/api/requirements.txt
+      - name: Sincronizar USGS IGP y evaluar alertas
+        run: python services/api/scripts/seismic_worker.py
