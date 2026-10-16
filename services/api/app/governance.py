@@ -964,44 +964,32 @@ def auto_contar_nuevos(filas, anterior):
 
 
 def auto_preparar():
-    # Primera opcion: datos validos de Peru.
-    # Alternativa: cobertura global si Peru no llega
-    # al minimo exigido para entrenamiento.
-    errores = []
-
-    for peru in (True, False):
-        datos = NuevaVersion(
-            nombre=(
-                "SISMOIA AUTO Peru"
-                if peru
-                else "SISMOIA AUTO Global"
-            ),
-            fuente=None,
-            peru=peru,
-            solo_validos=True,
-            imputar_profundidad=True,
-            objetivo="magnitud",
-            limite=2000
-        )
-
-        try:
-            manifest, filas, firma = construir_snapshot(
-                datos
-            )
-
-            return datos, manifest, filas, firma
-
-        except HTTPException as error:
-            if error.status_code != 422:
-                raise
-
-            errores.append(str(error.detail))
-
-    raise HTTPException(
-        422,
-        "No hay suficientes registros validos. "
-        + " | ".join(errores)
+    # Peru es la cobertura inicial.
+    # Nunca cambiar silenciosamente a datos globales.
+    datos = NuevaVersion(
+        nombre="SISMOIA AUTO Peru",
+        fuente=None,
+        peru=True,
+        solo_validos=True,
+        imputar_profundidad=True,
+        objetivo="magnitud",
+        limite=2000
     )
+
+    try:
+        manifest, filas, firma = construir_snapshot(datos)
+    except HTTPException as error:
+        if error.status_code != 422:
+            raise
+
+        raise HTTPException(
+            422,
+            "No hay suficientes eventos validos de Peru "
+            "para preparar y entrenar el modelo. "
+            "Se mantiene la cobertura peruana."
+        ) from error
+
+    return datos, manifest, filas, firma
 
 
 @router.post("/auto-run")
@@ -1038,9 +1026,18 @@ def entrenamiento_automatico(
             .limit(1)
         )
 
-        nuevos = auto_contar_nuevos(filas, ultimo)
+        mismo_alcance = (
+            ultimo is not None
+            and ultimo.manifest.get('peru') == manifest['peru']
+            and ultimo.manifest.get('objetivo') == manifest['objetivo']
+        )
 
-        if ultimo is not None and nuevos < 30:
+        nuevos = (
+            auto_contar_nuevos(filas, ultimo)
+            if mismo_alcance else len(filas)
+        )
+
+        if mismo_alcance and nuevos < 30:
             version = ultimo
             nuevo_dataset = False
         else:
