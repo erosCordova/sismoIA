@@ -19,7 +19,6 @@ jobs:
     env:
       DATABASE_URL: ${{ secrets.SISMOIA_DATABASE_URL }}
       JWT_SECRET_KEY: ${{ secrets.SISMOIA_JWT_SECRET_KEY }}
-      RENDER_DEPLOY_HOOK_URL: ${{ secrets.SISMOIA_RENDER_DEPLOY_HOOK_URL }}
       SISMOIA_ML_OUTPUT_DIR: ${{ runner.temp }}/sismoia_ml
 
     steps:
@@ -53,15 +52,3 @@ jobs:
           path: ${{ runner.temp }}/sismoia_ml/
           if-no-files-found: error
           retention-days: 7
-
-      - name: Ejecutar despliegue Render existente
-        if: ${{ env.RENDER_DEPLOY_HOOK_URL != '' }}
-        shell: bash
-        run: |
-          if [[ "$RENDER_DEPLOY_HOOK_URL" != https://api.render.com/deploy/* ]]; then
-            echo "DEPLOY_HOOK_INVALIDO"
-            exit 1
-          fi
-          codigo=$(curl --silent --show-error --output /dev/null --write-out "%{http_code}" --request POST --max-time 60 "$RENDER_DEPLOY_HOOK_URL")
-          echo "RENDER_HTTP=$codigo"
-          [[ "$codigo" == "200" || "$codigo" == "202" ]]
