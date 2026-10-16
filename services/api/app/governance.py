@@ -940,3 +940,267 @@ def revisar_experimento(
         db.refresh(ejecucion)
 
         return experimento_json(ejecucion)
+
+# SISMOIA_AUTO_ML_V1
+# Orquestacion automatica reutilizando el motor existente.
+# No aprueba ni publica modelos de manera automatica.
+
+from sqlalchemy import text as auto_sql_text
+
+
+def auto_contar_nuevos(filas, anterior):
+    if anterior is None:
+        return len(filas)
+
+    conocidos = {
+        str(r["id"])
+        for r in anterior.snapshot
+    }
+
+    return sum(
+        str(r["id"]) not in conocidos
+        for r in filas
+    )
+
+
+def auto_preparar():
+    # Primera opcion: datos validos de Peru.
+    # Alternativa: cobertura global si Peru no llega
+    # al minimo exigido para entrenamiento.
+    errores = []
+
+    for peru in (True, False):
+        datos = NuevaVersion(
+            nombre=(
+                "SISMOIA AUTO Peru"
+                if peru
+                else "SISMOIA AUTO Global"
+            ),
+            fuente=None,
+            peru=peru,
+            solo_validos=True,
+            imputar_profundidad=True,
+            objetivo="magnitud",
+            limite=2000
+        )
+
+        try:
+            manifest, filas, firma = construir_snapshot(
+                datos
+            )
+
+            return datos, manifest, filas, firma
+
+        except HTTPException as error:
+            if error.status_code != 422:
+                raise
+
+            errores.append(str(error.detail))
+
+    raise HTTPException(
+        422,
+        "No hay suficientes registros validos. "
+        + " | ".join(errores)
+    )
+
+
+@router.post("/auto-run")
+def entrenamiento_automatico(
+    usuario=Depends(
+        requerir_permiso("models:train")
+    )
+):
+    # Un solo entrenamiento simultaneo en PostgreSQL.
+    # El bloqueo se libera al terminar la transaccion.
+    with Session(engine) as db:
+        libre = db.execute(
+            auto_sql_text(
+                "SELECT pg_try_advisory_xact_lock(88773322)"
+            )
+        ).scalar()
+
+        if not libre:
+            raise HTTPException(
+                409,
+                "Ya se esta ejecutando el entrenamiento"
+            )
+
+        datos, manifest, filas, firma = auto_preparar()
+
+        ultimo = db.scalar(
+            select(DatasetVersion)
+            .where(
+                DatasetVersion.name.like("SISMOIA AUTO%")
+            )
+            .order_by(
+                DatasetVersion.created_at.desc()
+            )
+            .limit(1)
+        )
+
+        nuevos = auto_contar_nuevos(filas, ultimo)
+
+        if ultimo is not None and nuevos < 30:
+            version = ultimo
+            nuevo_dataset = False
+        else:
+            version = db.scalar(
+                select(DatasetVersion)
+                .where(
+                    DatasetVersion.signature == firma
+                )
+            )
+
+            nuevo_dataset = version is None
+
+            if nuevo_dataset:
+                version = DatasetVersion(
+                    name=datos.nombre,
+                    signature=firma,
+                    status="pending",
+                    total_rows=len(filas),
+                    manifest=manifest,
+                    snapshot=filas,
+                    created_by=actor(usuario)
+                )
+
+                db.add(version)
+                db.flush()
+
+                auditar(
+                    db,
+                    usuario,
+                    "dataset.auto.create",
+                    "sismo_dataset_version",
+                    version.id,
+                    None,
+                    {
+                        "firma": firma,
+                        "filas": len(filas),
+                        "estado": "pending",
+                        "automatizado": True
+                    }
+                )
+
+        if version.status == "rejected":
+            raise HTTPException(
+                409,
+                "El dataset fue rechazado y no puede "
+                "utilizarse para entrenamiento"
+            )
+
+        if firma_snapshot(
+            version.manifest,
+            version.snapshot
+        ) != version.signature:
+            raise HTTPException(
+                409,
+                "La integridad del dataset no es valida"
+            )
+
+        resultados = []
+        entrenados = 0
+
+        for algoritmo in (
+            "regresion",
+            "clasificacion"
+        ):
+            existente = db.scalar(
+                select(ExperimentRun)
+                .where(
+                    ExperimentRun.dataset_id == version.id,
+                    ExperimentRun.algorithm == algoritmo
+                )
+                .order_by(
+                    ExperimentRun.created_at.desc()
+                )
+                .limit(1)
+            )
+
+            if existente is not None:
+                resultados.append({
+                    "algoritmo": algoritmo,
+                    "estado": "ya_entrenado",
+                    "experimento_id": str(existente.id),
+                    "resultados": existente.results
+                })
+                continue
+
+            try:
+                parametros, metricas, artefacto, huella = (
+                    ejecutar_experimento(
+                        version,
+                        algoritmo
+                    )
+                )
+
+            except HTTPException as error:
+                if error.status_code != 422:
+                    raise
+
+                resultados.append({
+                    "algoritmo": algoritmo,
+                    "estado": "datos_insuficientes",
+                    "detalle": str(error.detail)
+                })
+                continue
+
+            ejecucion = ExperimentRun(
+                dataset_id=version.id,
+                algorithm=algoritmo,
+                status="pending",
+                parameters=parametros,
+                results=metricas,
+                artifact=artefacto,
+                artifact_sha256=huella,
+                created_by=actor(usuario)
+            )
+
+            db.add(ejecucion)
+            db.flush()
+
+            auditar(
+                db,
+                usuario,
+                "ml.experiment.auto.create",
+                "sismo_ml_experiment",
+                ejecucion.id,
+                None,
+                {
+                    "dataset_id": str(version.id),
+                    "algoritmo": algoritmo,
+                    "huella_sha256": huella,
+                    "estado": "pending"
+                }
+            )
+
+            entrenados += 1
+
+            resultados.append({
+                "algoritmo": algoritmo,
+                "estado": "entrenado",
+                "experimento_id": str(ejecucion.id),
+                "resultados": metricas
+            })
+
+        db.commit()
+
+        return {
+            "estado": (
+                "entrenado"
+                if entrenados
+                else "sin_cambios"
+            ),
+            "automatico": True,
+            "dataset_id": str(version.id),
+            "dataset_nuevo": nuevo_dataset,
+            "total_registros": version.total_rows,
+            "nuevos_desde_version_anterior": nuevos,
+            "entrenamientos_nuevos": entrenados,
+            "experimentos": resultados,
+            "requiere_aprobacion_humana": True,
+            "advertencia": (
+                "Los experimentos son retrospectivos. "
+                "No predicen futuros terremotos."
+            )
+        }
