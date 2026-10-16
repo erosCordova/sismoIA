@@ -314,3 +314,98 @@
     padding: 18px;
   }
 }
+
+/* SISMOIA - RESULTADOS GUIADOS */
+
+.gov-result-card {
+  margin: 22px 0;
+  padding: 22px;
+  border: 1px solid #d9e8f3;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #f5fbff, #f8f7ff);
+}
+
+.gov-result-title span {
+  color: #2777a5;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.gov-result-title h4 {
+  margin: 8px 0;
+  color: #173d62;
+  font-size: 20px;
+}
+
+.gov-result-title p {
+  color: #61778a;
+  margin-bottom: 18px;
+}
+
+.gov-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.gov-metric-grid > div {
+  background: white;
+  border: 1px solid #dfeaf2;
+  border-radius: 14px;
+  padding: 16px;
+  min-width: 0;
+}
+
+.gov-metric-grid span,
+.gov-metric-grid strong,
+.gov-metric-grid small {
+  display: block;
+}
+
+.gov-metric-grid span {
+  color: #536b80;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.gov-metric-grid strong {
+  color: #126f9c;
+  font-size: 27px;
+  margin: 9px 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.gov-metric-grid small {
+  color: #6c8291;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.gov-result-advice {
+  margin-top: 15px;
+  background: #fff8e9;
+  border: 1px solid #f2deb1;
+  border-radius: 12px;
+  padding: 15px;
+}
+
+.gov-result-advice strong {
+  color: #775011;
+}
+
+.gov-result-advice p {
+  color: #695934;
+  line-height: 1.6;
+  margin: 7px 0 0;
+}
+
+@media (max-width: 760px) {
+  .gov-metric-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gov-result-card {
+    padding: 15px;
+  }
+}

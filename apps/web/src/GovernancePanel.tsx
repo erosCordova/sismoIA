@@ -722,15 +722,119 @@ export default function GovernancePanel({
                   )}
                 </div>
 
+
+                <section
+                  className="gov-result-card"
+                  aria-label="Resumen del entrenamiento"
+                >
+                  <div className="gov-result-title">
+                    <span>RESULTADO DEL EXPERIMENTO</span>
+                    <h4>{e.resultados.modelo_seleccionado}</h4>
+                    <p>
+                      {e.resultados.entrenamiento} registros
+                      para aprender y
+                      {" "}{e.resultados.validacion}
+                      {" "}para evaluar.
+                    </p>
+                  </div>
+
+                  {(() => {
+                    const m =
+                      e.resultados.comparacion.find(
+                        item => item.modelo ===
+                          e.resultados.modelo_seleccionado
+                      ) ?? e.resultados.comparacion[0];
+
+                    if (!m) {
+                      return <p>Sin métricas disponibles.</p>;
+                    }
+
+                    const mostrar = (valor?: number) =>
+                      valor == null || !Number.isFinite(valor)
+                        ? "—"
+                        : valor.toFixed(3);
+
+                    return (
+                      <>
+                        <div className="gov-metric-grid">
+                          {e.algoritmo === "regresion" ? (
+                            <>
+                              <div>
+                                <span>Error promedio (MAE)</span>
+                                <strong>{mostrar(m.mae)}</strong>
+                                <small>Menor es mejor</small>
+                              </div>
+                              <div>
+                                <span>Error RMSE</span>
+                                <strong>{mostrar(m.rmse)}</strong>
+                                <small>Penaliza errores grandes</small>
+                              </div>
+                              <div>
+                                <span>Ajuste R²</span>
+                                <strong>{mostrar(m.r2)}</strong>
+                                <small>
+                                  Comparación con una referencia
+                                </small>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div>
+                                <span>Precisión</span>
+                                <strong>
+                                  {mostrar(m.precision)}
+                                </strong>
+                                <small>
+                                  Acierto entre positivos estimados
+                                </small>
+                              </div>
+                              <div>
+                                <span>Recall</span>
+                                <strong>
+                                  {mostrar(m.recall)}
+                                </strong>
+                                <small>
+                                  Positivos reales detectados
+                                </small>
+                              </div>
+                              <div>
+                                <span>F1</span>
+                                <strong>{mostrar(m.f1)}</strong>
+                                <small>
+                                  Equilibrio de precisión y recall
+                                </small>
+                              </div>
+                            </>
+                          )}
+                        </div>
+
+                        <div className="gov-result-advice">
+                          <strong>
+                            ¿Qué significa este resultado?
+                          </strong>
+
+                          <p>
+                            {e.algoritmo === "regresion"
+                              ? m.r2 != null && m.r2 <= 0.1
+                                ? "El modelo tiene un ajuste muy bajo. Conviene revisar las variables y compararlo con una referencia antes de aprobarlo."
+                                : "Revisa los errores y compáralos con una referencia sencilla. Un entrenamiento exitoso no garantiza buenas estimaciones."
+                              : "Compara precisión, recall, F1 y la matriz de confusión. Ninguna métrica aislada demuestra que el modelo sea adecuado."}
+                          </p>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </section>
+
                 <div className="gov-tablewrap">
                   <table>
                     <thead>
                       <tr>
                         <th>Modelo</th>
-                        <th>MAE</th>
-                        <th>RMSE</th>
-                        <th>R²</th>
-                        <th>Precision</th>
+                        <th title="Error absoluto medio; menor es mejor">MAE</th>
+                        <th title="Raíz del error cuadrático medio">RMSE</th>
+                        <th title="Coeficiente de determinación">R²</th>
+                        <th title="Proporción de predicciones positivas correctas">Precisión</th>
                         <th>Recall</th>
                         <th>F1</th>
                       </tr>
