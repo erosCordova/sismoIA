@@ -19,17 +19,45 @@ def sincronizar_igp(usuario: dict = Depends(usuario_actual)):
     parametros = {
         "f": "json", "where": "1=1",
         "outFields": "objectid,code,fechaevento,fecha,lat,lon,magnitud,prof,ref,departamento",
-        "returnGeometry": "true", "orderByFields": "fechaevento DESC",
+        "returnGeometry": "true", "orderByFields": "fechaevento DESC, objectid DESC",
         "resultRecordCount": 500, "outSR": 4326
     }
     try:
+        registros = []
         with httpx.Client(timeout=60, follow_redirects=True) as cliente:
-            respuesta = cliente.get(IGP_URL + "/query", params=parametros)
-            respuesta.raise_for_status()
-            datos = respuesta.json()
-        if not isinstance(datos, dict) or "error" in datos or not isinstance(datos.get("features"), list):
-            raise ValueError(str(datos.get("error", "Respuesta ArcGIS invalida")))
-        registros = datos["features"]
+            for numero_pagina in range(100):
+                parametros_pagina = {
+                    **parametros,
+                    "resultOffset": numero_pagina * 500
+                }
+                respuesta = cliente.get(
+                    IGP_URL + "/query",
+                    params=parametros_pagina
+                )
+                respuesta.raise_for_status()
+                datos = respuesta.json()
+
+                if not isinstance(datos, dict):
+                    raise ValueError("Respuesta ArcGIS invalida")
+                if "error" in datos:
+                    raise ValueError(str(datos["error"]))
+
+                pagina = datos.get("features")
+                if not isinstance(pagina, list):
+                    raise ValueError("Pagina ArcGIS invalida")
+
+                if registros and pagina:
+                    primero = (pagina[0].get("attributes") or {}).get("objectid")
+                    anterior_id = (registros[0].get("attributes") or {}).get("objectid")
+                    if primero == anterior_id:
+                        raise ValueError("IGP no respeta la paginacion")
+
+                registros.extend(pagina)
+
+                if len(pagina) < 500:
+                    break
+            else:
+                raise ValueError("Limite de seguridad de paginacion alcanzado")
     except (httpx.HTTPError, ValueError, KeyError) as error:
         raise HTTPException(502, f"Error consultando IGP: {error}")
 
