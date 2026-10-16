@@ -30,7 +30,7 @@ const modulos: Modulo[] = [
   {nombre:"Análisis estadístico", ruta:"/analisis", grupo:"Monitoreo", icono:BarChart3, permiso:"analytics:read"},
 
   {nombre:"Preparación de datos", ruta:"/datos", grupo:"Inteligencia artificial", icono:Database, permiso:"datasets:read"},
-  {nombre:"Resultados de IA", ruta:"/modelos", grupo:"Inteligencia artificial", icono:BrainCircuit, permiso:"models:read"},
+  {nombre:"Modelos ML", ruta:"/modelos", grupo:"Inteligencia artificial", icono:BrainCircuit, permiso:"models:read"},
   {nombre:"Estimaciones", ruta:"/estimaciones", grupo:"Inteligencia artificial", icono:TrendingUp, permiso:"estimates:read"},
 
   {nombre:"Reglas de alertas", ruta:"/reglas", grupo:"Operaciones", icono:SlidersHorizontal, permiso:"rules:manage"},
@@ -55,7 +55,7 @@ const GovernancePanel = lazy(() => import("./GovernancePanel"));
 const CatalogWorkspace = lazy(() => import("./CatalogWorkspace"));
 const AnalyticsWorkspace = lazy(() => import("./AnalyticsWorkspace"));
 const PreparationWorkspace = lazy(() => import("./PreparationWorkspace"));
-const MLResultsPanel = lazy(() => import("./MLResultsPanel"));
+const ModelsWorkspace = lazy(() => import("./ModelsWorkspace"));
 const EstimatesWorkspace = lazy(() => import("./EstimatesWorkspace"));
 const AlertsWorkspace = lazy(() => import("./AlertsWorkspace"));
 const SourcesWorkspace = lazy(() => import("./SourcesWorkspace"));
@@ -234,7 +234,7 @@ function Plataforma() {
         return <><PreparationWorkspace peru={peru} /><SciencePanels modo="datos" peru={peru} /><GovernancePanel seccion="datasets" peru={peru} /></>;
 
       case "/modelos":
-        return <MLResultsPanel />;
+        return <><ModelsWorkspace /><SciencePanels modo="modelos" peru={peru} /><GovernancePanel seccion="experiments" peru={peru} /></>;
 
       case "/estimaciones":
         return <EstimatesWorkspace peru={peru} />;
@@ -255,20 +255,7 @@ function Plataforma() {
         return <ManagementWorkspace seccion="usuarios" />;
 
       case "/auditoria":
-        return <>
-          <ManagementWorkspace seccion="auditoria" />
-          {puede("users:manage") && puede("models:read") && (
-            <details style={{marginTop: 20}}>
-              <summary>
-                Revisión científica de modelos (administración)
-              </summary>
-              <GovernancePanel
-                seccion="experiments"
-                peru={peru}
-              />
-            </details>
-          )}
-        </>;
+        return <ManagementWorkspace seccion="auditoria" />;
 
       default:
         return null;
