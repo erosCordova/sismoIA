@@ -28,6 +28,42 @@ export default function MLWorkflow({peru}: Props) {
     <div className="mlw">
 
       <header className="mlw-header">
+        <div className="mlw-guide">
+          <span className="mlw-guide-label">
+            EMPIEZA AQUÍ
+          </span>
+
+          <h3>
+            Tu primera estimación, paso a paso
+          </h3>
+
+          <p>
+            Sigue este recorrido para crear un modelo
+            y comprobar cómo funciona con datos reales.
+          </p>
+
+          <div className="mlw-guide-grid">
+            <Link to="/datos">
+              <span className="mlw-guide-num">01</span>
+              <strong>Crear datos</strong>
+              <small>Prepara el conjunto de entrenamiento</small>
+            </Link>
+
+            <a href="#ml-entrenamiento">
+              <span className="mlw-guide-num">02</span>
+              <strong>Entrenar un modelo</strong>
+              <small>Escoge regresión o clasificación</small>
+            </a>
+
+            <a href="#ml-entrenamiento">
+              <span className="mlw-guide-num">03</span>
+              <strong>Revisar resultados</strong>
+              <small>Compara métricas y limitaciones</small>
+            </a>
+          </div>
+        </div>
+
+
         <div className="mlw-headline">
           <BrainCircuit size={27}/>
 

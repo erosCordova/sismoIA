@@ -141,3 +141,176 @@
   .gov-panel{padding:13px}
   .gov-form{grid-template-columns:1fr}
 }
+
+
+/* SISMOIA UX GUIADA V1 */
+
+.gov-hero {
+  padding: 26px;
+  border-radius: 20px;
+  background: linear-gradient(
+    120deg, #e7f6ff, #eff5ff 52%, #f3edff
+  );
+  border: 1px solid #cee5f6;
+  margin-bottom: 20px;
+}
+
+.gov-eyebrow {
+  display: inline-block;
+  color: #27649a;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .09em;
+  margin-bottom: 10px;
+}
+
+.gov-hero h2 {
+  font-size: clamp(21px, 2.7vw, 29px);
+  color: #173c61;
+  margin: 0 0 9px;
+}
+
+.gov-hero p {
+  color: #526981;
+  max-width: 750px;
+  line-height: 1.65;
+}
+
+.gov-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0;
+  margin: 22px 0;
+  list-style: none;
+}
+
+.gov-steps li {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  background: #fff;
+  border: 1px solid #d9e6ef;
+  border-radius: 13px;
+  padding: 14px;
+}
+
+.gov-steps li.gov-active {
+  border-color: #248dbb;
+  box-shadow: 0 0 0 2px #248dbb20;
+}
+
+.gov-step-number {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border-radius: 10px;
+  background: #e7f3ff;
+  color: #17618e;
+  font-weight: 800;
+}
+
+.gov-active .gov-step-number {
+  background: #127dab;
+  color: #fff;
+}
+
+.gov-completed .gov-step-number {
+  background: #d8f5e6;
+  color: #166b47;
+}
+
+.gov-steps strong,
+.gov-steps small {
+  display: block;
+}
+
+.gov-steps strong {
+  color: #24465e;
+  font-size: 13px;
+}
+
+.gov-steps small {
+  color: #61778b;
+  font-size: 11px;
+  margin-top: 3px;
+}
+
+.gov-navigation a {
+  color: #086b9a;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.gov-navigation a:hover {
+  text-decoration: underline;
+}
+
+.gov-instructions,
+.gov-interpretacion {
+  padding: 15px 18px;
+  background: #eff8ff;
+  border-left: 4px solid #248dbb;
+  border-radius: 10px;
+  margin: 16px 0;
+  color: #315574;
+}
+
+.gov-instructions p,
+.gov-interpretacion p {
+  margin: 6px 0 0;
+  line-height: 1.6;
+  font-size: 13px;
+}
+
+.gov-help {
+  display: block;
+  color: #627c90;
+  font-size: 12px;
+  line-height: 1.5;
+  font-weight: 400;
+  margin: 3px 0 7px;
+}
+
+.gov-estado {
+  font-weight: 700;
+  font-size: 12px;
+  border-radius: 20px;
+  padding: 5px 10px;
+}
+
+.gov-itemtop .gov-estado-pending {
+  background: #fff3d6;
+  color: #865b09;
+}
+
+.gov-itemtop .gov-estado-approved {
+  background: #dcf7e9;
+  color: #17643c;
+}
+
+.gov-itemtop .gov-estado-rejected {
+  background: #ffe6e6;
+  color: #9b2e36;
+}
+
+.gov-form button {
+  transition: transform .15s, box-shadow .15s;
+}
+
+.gov-form button:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 15px #167ca32b;
+}
+
+@media(max-width: 760px) {
+  .gov-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .gov-hero {
+    padding: 18px;
+  }
+}

@@ -155,3 +155,80 @@
     font-size: 1.2rem;
   }
 }
+
+
+/* SISMOIA UX GUIADA V1 */
+
+.mlw-guide {
+  background: linear-gradient(
+    115deg, #eaf7ff, #eef2ff, #f4efff
+  );
+  border: 1px solid #d4e6f5;
+  border-radius: 18px;
+  padding: 23px;
+  margin-bottom: 24px;
+}
+
+.mlw-guide-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  color: #2373a1;
+}
+
+.mlw-guide h3 {
+  font-size: 21px;
+  margin: 8px 0;
+  color: #214565;
+}
+
+.mlw-guide > p {
+  color: #5d7488;
+  font-size: 13px;
+}
+
+.mlw-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.mlw-guide-grid a {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  text-decoration: none;
+  padding: 17px;
+  background: #fff;
+  border: 1px solid #dbe7f1;
+  border-radius: 13px;
+  transition: transform .15s, border-color .15s;
+}
+
+.mlw-guide-grid a:hover {
+  transform: translateY(-2px);
+  border-color: #2994c3;
+}
+
+.mlw-guide-num {
+  font-size: 20px;
+  font-weight: 800;
+  color: #258ab9;
+}
+
+.mlw-guide-grid strong {
+  color: #23475f;
+  font-size: 14px;
+}
+
+.mlw-guide-grid small {
+  color: #668093;
+  line-height: 1.5;
+}
+
+@media(max-width: 760px) {
+  .mlw-guide-grid {
+    grid-template-columns: 1fr;
+  }
+}

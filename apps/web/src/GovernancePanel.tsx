@@ -6,6 +6,7 @@ import {
   TokenContext, UsuarioContext
 } from "./AuthGate";
 
+import {Link} from "react-router-dom";
 import "./governance.css";
 
 type Version = {
@@ -50,6 +51,16 @@ type Experimento = {
     }[];
   };
 };
+
+function etiquetaEstado(estado: string): string {
+  const etiquetas: Record<string, string> = {
+    pending: "Pendiente de revisión",
+    approved: "Aprobado",
+    rejected: "Rechazado"
+  };
+
+  return etiquetas[estado] ?? estado;
+}
 
 export default function GovernancePanel({
   seccion,
@@ -240,12 +251,62 @@ export default function GovernancePanel({
 
   return (
     <section className="gov-panel">
-      <header>
-        <h2>Gobierno científico persistente</h2>
+      <header className="gov-hero">
+        <span className="gov-eyebrow">
+          SISMOIA · LABORATORIO DE MACHINE LEARNING
+        </span>
+
+        <h2>
+          {seccion === "datasets"
+            ? "Prepara tus datos para entrenar"
+            : "Entrena y comprende tus modelos"}
+        </h2>
+
         <p>
-          Datasets inmutables, experimentos,
-          aprobación y auditoría.
+          {seccion === "datasets"
+            ? "Crea un conjunto de datos reales, elige qué deseas estudiar y guárdalo para entrenar."
+            : "Selecciona un dataset, entrena un algoritmo y revisa sus resultados antes de aprobarlo."}
         </p>
+
+        <ol className="gov-steps">
+          <li className={seccion === "datasets"
+            ? "gov-active" : "gov-completed"}>
+            <span className="gov-step-number">1</span>
+            <div>
+              <strong>Preparar datos</strong>
+              <small>Crear y revisar el dataset</small>
+            </div>
+          </li>
+
+          <li className={seccion === "experiments"
+            ? "gov-active" : ""}>
+            <span className="gov-step-number">2</span>
+            <div>
+              <strong>Entrenar</strong>
+              <small>Seleccionar el algoritmo</small>
+            </div>
+          </li>
+
+          <li>
+            <span className="gov-step-number">3</span>
+            <div>
+              <strong>Evaluar</strong>
+              <small>Comprender los resultados</small>
+            </div>
+          </li>
+        </ol>
+
+        <div className="gov-navigation">
+          {seccion === "datasets" ? (
+            <Link to="/modelos#ml-entrenamiento">
+              Ir al entrenamiento →
+            </Link>
+          ) : (
+            <Link to="/datos">
+              ← Crear o revisar un dataset
+            </Link>
+          )}
+        </div>
       </header>
 
       <div className="gov-banner">
@@ -272,9 +333,24 @@ export default function GovernancePanel({
         <>
           <h3>Registrar versión de dataset</h3>
 
+
+          <div className="gov-instructions">
+            <strong>¿Qué debes configurar?</strong>
+            <p>
+              Pon un nombre a tu estudio, selecciona las
+              fuentes y elige la variable que analizarás.
+              SISMOIA reservará el 20 % de los registros
+              para evaluar los resultados.
+            </p>
+          </div>
+
           <div className="gov-form">
             <label>
-              Nombre
+              Nombre del dataset
+              <small className="gov-help">
+                Usa un nombre fácil de identificar,
+                por ejemplo: Estudio de magnitudes Perú.
+              </small>
               <input
                 value={nombre}
                 maxLength={120}
@@ -285,7 +361,11 @@ export default function GovernancePanel({
             </label>
 
             <label>
-              Fuente
+              Fuente de información
+              <small className="gov-help">
+                IGP: datos nacionales. USGS: catálogo
+                internacional. Puedes utilizar ambas.
+              </small>
               <select
                 value={fuente}
                 onChange={e =>
@@ -329,6 +409,8 @@ export default function GovernancePanel({
                 <option value="500">500</option>
                 <option value="1000">1000</option>
                 <option value="2000">2000</option>
+                <option value="5000">5000</option>
+                <option value="10000">10000</option>
               </select>
             </label>
 
@@ -405,14 +487,16 @@ export default function GovernancePanel({
         </label>
       )}
 
-          <h3>Versiones existentes</h3>
+          <h3>Datasets guardados</h3>
 
           <div className="gov-items">
             {datasets.map(d => (
               <article key={d.id}>
                 <div className="gov-itemtop">
                   <strong>{d.nombre}</strong>
-                  <span>{d.estado}</span>
+                  <span className={`gov-estado gov-estado-${d.estado}`}>
+                    {etiquetaEstado(d.estado)}
+                  </span>
                 </div>
 
                 <p>
@@ -477,9 +561,24 @@ export default function GovernancePanel({
         <>
           <h3>Entrenar y registrar experimento</h3>
 
+
+          <div className="gov-instructions">
+            <strong>¿Qué tipo de resultado necesitas?</strong>
+            <p>
+              Regresión: estima un valor numérico como
+              la magnitud. Clasificación: distingue
+              magnitudes menores de 4 y magnitudes
+              de 4 o superiores.
+            </p>
+          </div>
+
           <div className="gov-form">
             <label>
-              Dataset
+              Dataset para entrenar
+              <small className="gov-help">
+                Elige el conjunto de datos que creaste
+                o uno registrado anteriormente.
+              </small>
               <select
                 value={datasetId}
                 onChange={e =>
@@ -508,7 +607,11 @@ export default function GovernancePanel({
             </label>
 
             <label>
-              Algoritmo
+              Tipo de modelo
+              <small className="gov-help">
+                Escoge regresión para estimar valores
+                o clasificación para distinguir categorías.
+              </small>
               <select
                 value={algoritmo}
                 onChange={e =>
@@ -542,7 +645,7 @@ export default function GovernancePanel({
                 "Experimento y artefacto guardados"
               )}
             >
-              Entrenar y guardar
+              Entrenar modelo y evaluar
             </button>
           </div>
 
@@ -565,7 +668,7 @@ export default function GovernancePanel({
         </label>
       )}
 
-          <h3>Experimentos registrados</h3>
+          <h3>Resultados de los entrenamientos</h3>
 
           <div className="gov-items">
             {experimentos.map(e => (
@@ -574,7 +677,9 @@ export default function GovernancePanel({
                   <strong>
                     {e.resultados.modelo_seleccionado}
                   </strong>
-                  <span>{e.estado}</span>
+                  <span className={`gov-estado gov-estado-${e.estado}`}>
+                    {etiquetaEstado(e.estado)}
+                  </span>
                 </div>
 
                 <p>
@@ -584,6 +689,38 @@ export default function GovernancePanel({
                   {e.resultados.validacion}
                   {" "}validación
                 </p>
+
+                <div className="gov-interpretacion">
+                  {e.algoritmo === "regresion" ? (
+                    <>
+                      <strong>¿Cómo interpretar esta evaluación?</strong>
+                      <p>
+                        MAE indica cuánto se equivoca el modelo
+                        en promedio. RMSE penaliza más los
+                        errores grandes. R² muestra cuánto
+                        mejora el ajuste respecto a utilizar
+                        una referencia constante.
+                      </p>
+                      <p>
+                        Busca errores pequeños y compara
+                        siempre el modelo con la referencia.
+                        Un R² cercano a cero indica escasa
+                        capacidad explicativa.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <strong>¿Cómo interpretar esta clasificación?</strong>
+                      <p>
+                        Precisión indica qué proporción de
+                        las predicciones positivas fue correcta.
+                        Recall indica cuántos positivos reales
+                        identificó el modelo. F1 resume
+                        ambas métricas.
+                      </p>
+                    </>
+                  )}
+                </div>
 
                 <div className="gov-tablewrap">
                   <table>
