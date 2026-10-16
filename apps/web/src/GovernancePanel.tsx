@@ -53,10 +53,12 @@ type Experimento = {
 
 export default function GovernancePanel({
   seccion,
-  peru
+  peru,
+  onDataUpdated
 }: {
   seccion: "datasets" | "experiments";
   peru: boolean;
+  onDataUpdated?: () => void;
 }) {
   const token = useContext(TokenContext);
   const usuario = useContext(UsuarioContext);
@@ -193,6 +195,7 @@ export default function GovernancePanel({
       await accion();
       setMensaje(confirmacion);
       setRevision(v => v + 1);
+      onDataUpdated?.();
     } catch (e) {
       setError(
         e instanceof Error
@@ -263,18 +266,7 @@ export default function GovernancePanel({
         </p>
       )}
 
-      {puedeRevisar && (
-        <label className="gov-motivo">
-          Motivo de revisión administrativa
-          <input
-            value={motivo}
-            maxLength={500}
-            onChange={e =>
-              setMotivo(e.target.value)
-            }
-          />
-        </label>
-      )}
+
 
       {seccion === "datasets" ? (
         <>
@@ -399,6 +391,19 @@ export default function GovernancePanel({
             en entrenamiento (80 %) y validación
             (20 %).
           </p>
+
+      {puedeRevisar && (
+        <label className="gov-motivo">
+          Motivo de revisión administrativa
+          <input
+            value={motivo}
+            maxLength={500}
+            onChange={e =>
+              setMotivo(e.target.value)
+            }
+          />
+        </label>
+      )}
 
           <h3>Versiones existentes</h3>
 
@@ -546,6 +551,19 @@ export default function GovernancePanel({
             cuya variable objetivo sea magnitud.
             Los resultados son retrospectivos.
           </p>
+
+      {puedeRevisar && (
+        <label className="gov-motivo">
+          Motivo de revisión administrativa
+          <input
+            value={motivo}
+            maxLength={500}
+            onChange={e =>
+              setMotivo(e.target.value)
+            }
+          />
+        </label>
+      )}
 
           <h3>Experimentos registrados</h3>
 

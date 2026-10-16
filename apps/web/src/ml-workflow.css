@@ -1,0 +1,157 @@
+.mlw {
+  display: grid;
+  gap: 22px;
+  color: #173d55;
+}
+
+.mlw-header,
+.mlw-stage,
+.mlw-footer {
+  background: #fff;
+  border: 1px solid #d9e7ef;
+  border-radius: 14px;
+  padding: 20px;
+  min-width: 0;
+}
+
+.mlw-headline,
+.mlw-stage-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+}
+
+.mlw-headline {
+  align-items: center;
+}
+
+.mlw-headline h2 {
+  margin: 0;
+  font-size: 1.45rem;
+}
+
+.mlw h3 {
+  margin: 0 0 7px;
+}
+
+.mlw p {
+  margin: 6px 0;
+  line-height: 1.65;
+  color: #526f81;
+}
+
+.mlw-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  margin-top: 18px;
+  border-left: 4px solid #1097bc;
+  border-radius: 8px;
+  background: #edf7fb;
+}
+
+.mlw-notice svg {
+  flex-shrink: 0;
+}
+
+.mlw-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.mlw-nav a {
+  padding: 8px 11px;
+  border: 1px solid #cbdfe9;
+  border-radius: 8px;
+  background: #f7fbfd;
+  color: #076f93;
+  text-decoration: none;
+  font-size: .88rem;
+  font-weight: 600;
+}
+
+.mlw-nav a:hover,
+.mlw-nav a:focus-visible {
+  background: #dff3fa;
+}
+
+.mlw-stage {
+  display: grid;
+  gap: 18px;
+  scroll-margin-top: 20px;
+}
+
+.mlw-stage-head {
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e2edf2;
+}
+
+.mlw-stage-head h3 {
+  font-size: 1.18rem;
+}
+
+.mlw-number {
+  display: grid;
+  place-items: center;
+  background: #087fa7;
+  color: white;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  flex-shrink: 0;
+  font-weight: 700;
+}
+
+.mlw-expand {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  padding: 11px 16px;
+  background: #e8f6fb;
+  color: #066a8d;
+  border: 1px solid #b8e2ef;
+  border-radius: 9px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mlw-extra {
+  display: grid;
+  gap: 18px;
+}
+
+.mlw-message {
+  padding: 14px;
+  background: #f5f8fa;
+  border-radius: 8px;
+}
+
+.mlw-footer {
+  background: #f5fbfd;
+}
+
+.mlw-footer a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  color: #087fa7;
+  font-weight: 700;
+}
+
+@media(max-width: 640px) {
+  .mlw-header,
+  .mlw-stage,
+  .mlw-footer {
+    padding: 13px;
+  }
+
+  .mlw-headline h2 {
+    font-size: 1.2rem;
+  }
+}

@@ -55,7 +55,7 @@ const GovernancePanel = lazy(() => import("./GovernancePanel"));
 const CatalogWorkspace = lazy(() => import("./CatalogWorkspace"));
 const AnalyticsWorkspace = lazy(() => import("./AnalyticsWorkspace"));
 const PreparationWorkspace = lazy(() => import("./PreparationWorkspace"));
-const ModelsWorkspace = lazy(() => import("./ModelsWorkspace"));
+const MLWorkflow = lazy(() => import("./MLWorkflow"));
 const EstimatesWorkspace = lazy(() => import("./EstimatesWorkspace"));
 const AlertsWorkspace = lazy(() => import("./AlertsWorkspace"));
 const SourcesWorkspace = lazy(() => import("./SourcesWorkspace"));
@@ -234,7 +234,7 @@ function Plataforma() {
         return <><PreparationWorkspace peru={peru} /><SciencePanels modo="datos" peru={peru} /><GovernancePanel seccion="datasets" peru={peru} /></>;
 
       case "/modelos":
-        return <><ModelsWorkspace /><SciencePanels modo="modelos" peru={peru} /><GovernancePanel seccion="experiments" peru={peru} /></>;
+        return <MLWorkflow peru={peru} />;
 
       case "/estimaciones":
         return <EstimatesWorkspace peru={peru} />;
