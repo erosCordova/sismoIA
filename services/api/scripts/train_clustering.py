@@ -1,6 +1,7 @@
 import csv
 import json
 from datetime import datetime, timezone
+import os
 from pathlib import Path
 import joblib
 import numpy as np
@@ -8,7 +9,10 @@ from sklearn.cluster import KMeans, DBSCAN
 from sklearn.metrics import silhouette_score
 from sklearn.preprocessing import StandardScaler
 
-BASE = Path(__file__).resolve().parents[1] / "data" / "processed"
+BASE = Path(
+    os.environ.get("SISMOIA_ML_OUTPUT_DIR")
+    or Path(__file__).resolve().parents[1] / "data" / "processed"
+)
 VARIABLES = ["latitud", "longitud", "magnitud", "profundidad_km"]
 
 def cargar(nombre):

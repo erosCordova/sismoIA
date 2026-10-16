@@ -3,13 +3,21 @@ import json
 import sys
 from collections import Counter
 from datetime import datetime, timezone
+import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from app.preparation import preparar
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+from app.database import engine
+from app.models import DataSource, SeismicEvent
+from app.preparation import transformar
 
-DESTINO = ROOT / "data" / "processed"
+DESTINO = Path(
+    os.environ.get("SISMOIA_ML_OUTPUT_DIR")
+    or ROOT / "data" / "processed"
+)
 DESTINO.mkdir(parents=True, exist_ok=True)
 COLUMNAS = [
     "id", "fuente", "fecha_utc", "anio", "mes", "hora_utc",
@@ -19,9 +27,22 @@ COLUMNAS = [
 ]
 CARACTERISTICAS = COLUMNAS[6:]
 
-registros = preparar(None, False, 10001)
-if len(registros) > 10000:
-    raise RuntimeError("Dataset supera 10000 filas: requiere procesamiento por lotes")
+with Session(engine) as db:
+    consulta = (
+        select(SeismicEvent, DataSource.name)
+        .join(DataSource, SeismicEvent.source_id == DataSource.id)
+        .order_by(
+            SeismicEvent.occurred_at,
+            SeismicEvent.id
+        )
+        .execution_options(stream_results=True)
+    )
+    registros = [
+        transformar(evento, nombre)
+        for evento, nombre in db.execute(
+            consulta
+        ).yield_per(1000)
+    ]
 
 validos = sorted(
     (r for r in registros if r["estado_calidad"] == "VALIDO"),

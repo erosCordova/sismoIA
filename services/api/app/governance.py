@@ -63,7 +63,7 @@ class NuevaVersion(BaseModel):
         "magnitud", "profundidad_km"
     ] = "magnitud"
     limite: int = Field(
-        default=1000, ge=50, le=2000
+        default=1000, ge=50, le=10000
     )
 
 

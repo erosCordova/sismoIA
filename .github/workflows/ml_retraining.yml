@@ -15,24 +15,53 @@ concurrency:
 jobs:
   reentrenar:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 50
     env:
+      DATABASE_URL: ${{ secrets.SISMOIA_DATABASE_URL }}
+      JWT_SECRET_KEY: ${{ secrets.SISMOIA_JWT_SECRET_KEY }}
       RENDER_DEPLOY_HOOK_URL: ${{ secrets.SISMOIA_RENDER_DEPLOY_HOOK_URL }}
+      SISMOIA_ML_OUTPUT_DIR: ${{ runner.temp }}/sismoia_ml
+
     steps:
-      - name: Validar configuracion
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: services/api/requirements.txt
+
+      - name: Verificar configuracion
+        shell: bash
+        run: |
+          test -n "$DATABASE_URL"
+          test -n "$JWT_SECRET_KEY"
+
+      - name: Instalar dependencias
+        run: python -m pip install -r services/api/requirements.txt
+
+      - name: Generar dataset historico
+        run: python services/api/scripts/build_ml_dataset.py
+
+      - name: Entrenar modelos exploratorios
+        run: python services/api/scripts/train_clustering.py
+
+      - name: Conservar candidatos y metricas
+        uses: actions/upload-artifact@v4
+        with:
+          name: sismoia-ml-candidatos
+          path: ${{ runner.temp }}/sismoia_ml/
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Ejecutar despliegue Render existente
+        if: ${{ env.RENDER_DEPLOY_HOOK_URL != '' }}
         shell: bash
         run: |
           if [[ "$RENDER_DEPLOY_HOOK_URL" != https://api.render.com/deploy/* ]]; then
-            echo "ERROR=DEPLOY_HOOK_NO_CONFIGURADO"
+            echo "DEPLOY_HOOK_INVALIDO"
             exit 1
           fi
-      - name: Solicitar reentrenamiento en Render
-        shell: bash
-        run: |
-          codigo=$(curl --silent --show-error --output "$RUNNER_TEMP/render-response.json" --write-out "%{http_code}" --request POST --max-time 60 "$RENDER_DEPLOY_HOOK_URL")
+          codigo=$(curl --silent --show-error --output /dev/null --write-out "%{http_code}" --request POST --max-time 60 "$RENDER_DEPLOY_HOOK_URL")
           echo "RENDER_HTTP=$codigo"
-          if [[ "$codigo" != "200" && "$codigo" != "202" ]]; then
-            echo "REENTRENAMIENTO_SOLICITADO=ERROR"
-            exit 1
-          fi
-          echo "REENTRENAMIENTO_SOLICITADO=OK"
+          [[ "$codigo" == "200" || "$codigo" == "202" ]]
