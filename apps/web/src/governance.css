@@ -409,3 +409,122 @@
     padding: 15px;
   }
 }
+
+
+/* SISMOIA - PRUEBA INTERACTIVA ML */
+
+.gov-try {
+  margin: 20px 0;
+  border: 1px solid #c9e2f3;
+  border-radius: 15px;
+  overflow: hidden;
+  background: #f4faff;
+}
+
+.gov-try summary {
+  padding: 17px;
+  cursor: pointer;
+  font-weight: 800;
+  color: #176b9c;
+  background: #e8f5ff;
+}
+
+.gov-try-body {
+  padding: 20px;
+}
+
+.gov-try-body h4 {
+  margin: 0 0 8px;
+  color: #19496b;
+}
+
+.gov-try-body p {
+  line-height: 1.6;
+}
+
+.gov-try-fields {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit, minmax(170px, 1fr)
+  );
+  gap: 14px;
+  margin: 18px 0;
+}
+
+.gov-try-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: #274c67;
+}
+
+.gov-try-fields small {
+  color: #688196;
+  line-height: 1.4;
+}
+
+.gov-try-fields input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #bad5e5;
+  background: #fff;
+  color: #1c3e57;
+  font-size: 15px;
+}
+
+.gov-try-body button {
+  border: 0;
+  border-radius: 10px;
+  padding: 12px 20px;
+  background: #157eac;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.gov-try-body button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.gov-try-warning {
+  background: #fff4d9;
+  border: 1px solid #eed69a;
+  border-radius: 10px;
+  padding: 12px;
+  color: #795412;
+}
+
+.gov-try-result {
+  margin-top: 20px;
+  padding: 20px;
+  background: #e7f8ee;
+  border: 1px solid #b3dfc5;
+  border-radius: 14px;
+}
+
+.gov-try-result span,
+.gov-try-result strong {
+  display: block;
+}
+
+.gov-try-result span {
+  font-size: 11px;
+  font-weight: 800;
+  color: #286c49;
+  letter-spacing: .08em;
+}
+
+.gov-try-result strong {
+  font-size: 25px;
+  color: #145b38;
+  margin: 9px 0;
+  overflow-wrap: anywhere;
+}
+
+.gov-try-result p {
+  color: #315d44;
+}

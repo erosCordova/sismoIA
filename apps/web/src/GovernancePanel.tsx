@@ -36,6 +36,8 @@ type Experimento = {
   motivo: string | null;
   resultados: {
     modelo_seleccionado: string;
+    objetivo: string;
+    variables: string[];
     entrenamiento: number;
     validacion: number;
     limitacion: string;
@@ -60,6 +62,228 @@ function etiquetaEstado(estado: string): string {
   };
 
   return etiquetas[estado] ?? estado;
+}
+
+
+type ResultadoEstimacion = {
+  modelo: string;
+  estado_modelo: string;
+  algoritmo: string;
+  objetivo: string;
+  estimacion: number;
+  categoria: string | null;
+  advertencia: string;
+};
+
+function PruebaEstimacion({
+  experimento,
+  habilitado
+}: {
+  experimento: Experimento;
+  habilitado: boolean;
+}) {
+  const token = useContext(TokenContext);
+
+  const [valores, setValores] =
+    useState<Record<string, string>>({});
+
+  const [resultado, setResultado] =
+    useState<ResultadoEstimacion | null>(null);
+
+  const [errorPrueba, setErrorPrueba] = useState("");
+  const [procesando, setProcesando] = useState(false);
+
+  const nombres: Record<string, string> = {
+    profundidad_km: "Profundidad (km)",
+    magnitud: "Magnitud observada",
+    latitud: "Latitud",
+    longitud: "Longitud"
+  };
+
+  const ayudas: Record<string, string> = {
+    profundidad_km: "Profundidad conocida del evento",
+    magnitud: "Magnitud registrada del evento",
+    latitud: "Ejemplo para Lima: -12.0464",
+    longitud: "Ejemplo para Lima: -77.0428"
+  };
+
+  const variables =
+    experimento.resultados.variables ?? [];
+
+  async function ejecutarPrueba(
+    evento: React.FormEvent<HTMLFormElement>
+  ) {
+    evento.preventDefault();
+
+    if (!token) {
+      setErrorPrueba("Inicia sesión para probar el modelo.");
+      return;
+    }
+
+    const entrada: Record<string, number> = {};
+
+    for (const variable of variables) {
+      const texto = (valores[variable] ?? "").trim();
+      const numero = Number(texto);
+
+      if (!texto || !Number.isFinite(numero)) {
+        setErrorPrueba(
+          "Introduce un número válido en " +
+          (nombres[variable] ?? variable)
+        );
+        return;
+      }
+
+      entrada[variable] = numero;
+    }
+
+    setProcesando(true);
+    setErrorPrueba("");
+    setResultado(null);
+
+    try {
+      const respuesta = await fetch(
+        "/api/v1/governance/experiments/" +
+        experimento.id + "/predict",
+        {
+          method: "POST",
+          cache: "no-store",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(entrada)
+        }
+      );
+
+      const datos = await respuesta.json();
+
+      if (!respuesta.ok) {
+        throw new Error(
+          typeof datos?.detail === "string"
+            ? datos.detail
+            : "No fue posible realizar la estimación"
+        );
+      }
+
+      setResultado(datos as ResultadoEstimacion);
+    } catch (error) {
+      setErrorPrueba(
+        error instanceof Error
+          ? error.message
+          : String(error)
+      );
+    } finally {
+      setProcesando(false);
+    }
+  }
+
+  return (
+    <details className="gov-try">
+      <summary>
+        Probar una estimación con este modelo
+      </summary>
+
+      <div className="gov-try-body">
+        <h4>Introduce los datos del evento</h4>
+
+        <p>
+          Completa las variables que utilizó
+          el modelo durante su entrenamiento.
+          El resultado será una estimación experimental.
+        </p>
+
+        {experimento.estado !== "approved" && (
+          <p className="gov-try-warning">
+            Este modelo está pendiente de aprobación.
+            Puedes probarlo, pero no está validado
+            para uso operativo.
+          </p>
+        )}
+
+        <form onSubmit={ejecutarPrueba}>
+          <div className="gov-try-fields">
+            {variables.map(variable => (
+              <label key={variable}>
+                <strong>
+                  {nombres[variable] ?? variable}
+                </strong>
+
+                <small>
+                  {ayudas[variable] ?? "Dato requerido"}
+                </small>
+
+                <input
+                  type="number"
+                  step="any"
+                  required
+                  value={valores[variable] ?? ""}
+                  onChange={evento => {
+                    setValores(actual => ({
+                      ...actual,
+                      [variable]: evento.target.value
+                    }));
+
+                    setResultado(null);
+                  }}
+                />
+              </label>
+            ))}
+          </div>
+
+          <button
+            type="submit"
+            disabled={
+              procesando ||
+              !habilitado ||
+              !variables.length
+            }
+          >
+            {procesando
+              ? "Calculando estimación..."
+              : "Probar modelo"}
+          </button>
+        </form>
+
+        {!habilitado && (
+          <p>
+            Tu rol no permite ejecutar pruebas de modelos.
+          </p>
+        )}
+
+        {errorPrueba && (
+          <p role="alert" className="gov-error">
+            {errorPrueba}
+          </p>
+        )}
+
+        {resultado && (
+          <div className="gov-try-result" role="status">
+            <span>RESULTADO DEL MODELO</span>
+
+            <strong>
+              {resultado.categoria ??
+                resultado.estimacion.toLocaleString(
+                  "es-PE",
+                  {maximumFractionDigits: 4}
+                )}
+              {resultado.algoritmo === "regresion" &&
+               resultado.objetivo === "profundidad_km"
+                ? " km" : ""}
+            </strong>
+
+            <p>
+              Modelo utilizado: {resultado.modelo}
+            </p>
+
+            <p>
+              {resultado.advertencia}
+            </p>
+          </div>
+        )}
+      </div>
+    </details>
+  );
 }
 
 export default function GovernancePanel({
@@ -860,6 +1084,11 @@ export default function GovernancePanel({
                     </tbody>
                   </table>
                 </div>
+
+                <PruebaEstimacion
+                  experimento={e}
+                  habilitado={puedeCrear}
+                />
 
                 <small>
                   Artefacto:{" "}

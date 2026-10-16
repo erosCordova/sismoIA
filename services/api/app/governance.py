@@ -1000,3 +1000,172 @@ def revisar_experimento(
         db.refresh(ejecucion)
 
         return experimento_json(ejecucion)
+
+
+class EntradaEstimacion(BaseModel):
+    latitud: float = Field(..., ge=-90, le=90)
+    longitud: float = Field(..., ge=-180, le=180)
+    profundidad_km: float | None = Field(
+        default=None, ge=0, le=800
+    )
+    magnitud: float | None = Field(
+        default=None, ge=-2, le=10
+    )
+
+
+@router.post("/experiments/{experiment_id}/predict")
+def predecir_experimento(
+    experiment_id: UUID,
+    datos: EntradaEstimacion,
+    usuario=Depends(requerir_permiso("models:train"))
+):
+    with Session(engine) as db:
+        experimento = db.get(ExperimentRun, experiment_id)
+
+        if experimento is None:
+            raise HTTPException(404, "Experimento no encontrado")
+
+        if experimento.status not in ("pending", "approved"):
+            raise HTTPException(
+                409, "Experimento no disponible para pruebas"
+            )
+
+        dataset = db.get(
+            DatasetVersion, experimento.dataset_id
+        )
+
+        if dataset is None or dataset.status == "rejected":
+            raise HTTPException(409, "Dataset no disponible")
+
+        if not firma_snapshot_valida(
+            dataset.manifest,
+            dataset.snapshot,
+            dataset.signature
+        ):
+            raise HTTPException(409, "Dataset alterado")
+
+        artefacto = bytes(experimento.artifact)
+
+        if (
+            not artefacto
+            or len(artefacto) > 20 * 1024 * 1024
+            or hashlib.sha256(artefacto).hexdigest()
+               != experimento.artifact_sha256
+        ):
+            raise HTTPException(
+                409, "Integridad del modelo no valida"
+            )
+
+        parametros = experimento.parameters
+        algoritmo = experimento.algorithm
+        estado = experimento.status
+        nombre_modelo = experimento.results.get(
+            "modelo_seleccionado", "Modelo entrenado"
+        )
+
+        objetivo = parametros.get("objetivo")
+        variables = parametros.get("variables")
+
+        if objetivo not in ("magnitud", "profundidad_km"):
+            raise HTTPException(409, "Objetivo no compatible")
+
+        esperadas = (
+            ["profundidad_km", "latitud", "longitud"]
+            if objetivo == "magnitud"
+            else ["magnitud", "latitud", "longitud"]
+        )
+
+        if variables != esperadas:
+            raise HTTPException(409, "Variables incompatibles")
+
+        if algoritmo not in ("regresion", "clasificacion"):
+            raise HTTPException(409, "Algoritmo no compatible")
+
+        if algoritmo == "clasificacion" and objetivo != "magnitud":
+            raise HTTPException(
+                409, "Clasificacion incompatible"
+            )
+
+        for variable in variables:
+            valor = getattr(datos, variable)
+
+            if valor is None or not math.isfinite(valor):
+                raise HTTPException(
+                    422, f"Falta un valor valido: {variable}"
+                )
+
+        if getattr(datos, objetivo) is not None:
+            raise HTTPException(
+                422,
+                "No introduzcas el valor que deseas estimar"
+            )
+
+        try:
+            paquete = joblib.load(io.BytesIO(artefacto))
+        except Exception:
+            raise HTTPException(
+                409, "No fue posible cargar el modelo"
+            )
+
+        if not isinstance(paquete, dict):
+            raise HTTPException(409, "Artefacto incompatible")
+
+        if (
+            paquete.get("firma_dataset") != dataset.signature
+            or paquete.get("variables") != variables
+            or paquete.get("objetivo") != objetivo
+            or paquete.get("algoritmo") != algoritmo
+        ):
+            raise HTTPException(
+                409, "Metadatos del modelo incompatibles"
+            )
+
+        modelo = paquete.get("modelo")
+
+        if modelo is None or not hasattr(modelo, "predict"):
+            raise HTTPException(409, "Modelo no ejecutable")
+
+        matriz = np.asarray([[
+            float(getattr(datos, variable))
+            for variable in variables
+        ]], dtype=float)
+
+        try:
+            prediccion = float(modelo.predict(matriz)[0])
+        except Exception:
+            raise HTTPException(
+                409, "El modelo no pudo procesar las entradas"
+            )
+
+        if not math.isfinite(prediccion):
+            raise HTTPException(409, "Resultado no valido")
+
+        resultado = {
+            "experimento_id": str(experiment_id),
+            "modelo": nombre_modelo,
+            "estado_modelo": estado,
+            "algoritmo": algoritmo,
+            "objetivo": objetivo,
+            "estimacion": round(prediccion, 4),
+            "categoria": None,
+            "advertencia": (
+                "Estimacion experimental a partir de datos "
+                "observados. No pronostica futuros terremotos."
+            )
+        }
+
+        if algoritmo == "clasificacion":
+            clase = int(round(prediccion))
+
+            if clase not in (0, 1):
+                raise HTTPException(
+                    409, "Clase predicha no valida"
+                )
+
+            resultado["categoria"] = (
+                "Magnitud mayor o igual a 4"
+                if clase == 1
+                else "Magnitud menor de 4"
+            )
+
+        return resultado
