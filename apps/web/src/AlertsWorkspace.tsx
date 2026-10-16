@@ -13,6 +13,7 @@ import {
 import "./preparation.css";
 import "./alerts.css";
 import "./alerts-enterprise.css";
+import DeliveriesPanel from "./DeliveriesPanel";
 
 type Regla = {
   id: string;
@@ -1306,6 +1307,8 @@ export default function AlertsWorkspace({
           )}
         </>
       )}
+
+      {seccion === "centro" && <DeliveriesPanel />}
 
       {seleccionado && (
         <div

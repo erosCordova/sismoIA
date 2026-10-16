@@ -112,3 +112,6 @@ app.include_router(science_router)
 
 from app.governance import router as governance_router
 app.include_router(governance_router)
+
+from app.deliveries import router as delivery_router
+app.include_router(delivery_router)
