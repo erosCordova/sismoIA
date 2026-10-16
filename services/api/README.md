@@ -118,3 +118,40 @@ Desde services/api ejecutar:
 - Aprobacion de politicas de retencion.
 
 Consultar RETENCION.md.
+
+## Notificaciones por correo electronico
+
+El panel de notificaciones permite:
+
+- Seleccionar alertas aprobadas.
+- Elegir un usuario interno activo.
+- Revisar el mensaje antes del envio.
+- Realizar envio manual autorizado.
+- Registrar resultado y evitar reenvios registrados.
+
+Variables necesarias en Render:
+
+    SISMOIA_EMAIL_ENABLED=false
+    SISMOIA_SMTP_HOST=servidor_smtp
+    SISMOIA_SMTP_PORT=465
+    SISMOIA_SMTP_SECURITY=ssl
+    SISMOIA_SMTP_USER=usuario_smtp
+    SISMOIA_SMTP_PASSWORD=secreto
+    SISMOIA_SMTP_FROM=correo_remitente
+
+No introducir credenciales reales en el repositorio.
+
+El envio permanece desactivado hasta configurar
+y habilitar voluntariamente el proveedor SMTP.
+
+El sistema registra los envios confirmados en
+alert_actions. Si SMTP acepta el mensaje pero
+el proceso falla antes de confirmar la transaccion,
+podria existir un envio sin registro; por tanto
+la garantia es de deduplicacion de envios registrados,
+no de entrega exactamente una vez.
+
+Una respuesta satisfactoria de SMTP no garantiza
+la lectura ni la entrega final al buzon.
+
+No usar este canal como alerta temprana oficial.

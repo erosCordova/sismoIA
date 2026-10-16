@@ -1,3 +1,4 @@
+import EmailNotificationsPanel from "./EmailNotificationsPanel";
 import {
   useContext, useEffect, useState,
   type FormEvent
@@ -1480,6 +1481,10 @@ export default function AlertsWorkspace({
           </section>
         </div>
       )}
-    </section>
+
+      {seccion === "centro" && aprobar && token && (
+        <EmailNotificationsPanel token={token} />
+      )}
+      </section>
   );
 }

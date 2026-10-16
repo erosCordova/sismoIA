@@ -118,3 +118,6 @@ app.include_router(governance_router)
 
 from app.deliveries import router as delivery_router
 app.include_router(delivery_router)
+
+from app.email_notifications import router as email_router
+app.include_router(email_router)
