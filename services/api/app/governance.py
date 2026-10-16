@@ -992,12 +992,7 @@ def auto_preparar():
     return datos, manifest, filas, firma
 
 
-@router.post("/auto-run")
-def entrenamiento_automatico(
-    usuario=Depends(
-        requerir_permiso("models:train")
-    )
-):
+def ejecutar_auto_ml(usuario):
     # Un solo entrenamiento simultaneo en PostgreSQL.
     # El bloqueo se libera al terminar la transaccion.
     with Session(engine) as db:
@@ -1201,3 +1196,10 @@ def entrenamiento_automatico(
                 "No predicen futuros terremotos."
             )
         }
+
+
+@router.post("/auto-run")
+def entrenamiento_automatico(
+    usuario=Depends(requerir_permiso("models:train"))
+):
+    return ejecutar_auto_ml(usuario)
