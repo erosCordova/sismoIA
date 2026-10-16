@@ -109,3 +109,6 @@ app.include_router(catalog_router)
 
 from app.science import router as science_router
 app.include_router(science_router)
+
+from app.governance import router as governance_router
+app.include_router(governance_router)
