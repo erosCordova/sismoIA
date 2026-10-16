@@ -108,6 +108,63 @@ def firma_snapshot(manifest, filas):
     ).hexdigest()
 
 
+def restaurar_ceros_ciclicos(filas):
+    """Recupera representaciones -0.0 normalizadas por JSONB."""
+    restauradas = []
+    cantidad = 0
+
+    for fila in filas:
+        copia = dict(fila)
+        hora = copia.get("hora_utc")
+        mes = copia.get("mes")
+
+        if isinstance(hora, int) and isinstance(mes, int):
+            valores = {
+                "ciclo_hora_sin": round(
+                    math.sin(2 * math.pi * hora / 24), 6
+                ),
+                "ciclo_hora_cos": round(
+                    math.cos(2 * math.pi * hora / 24), 6
+                ),
+                "ciclo_mes_sin": round(
+                    math.sin(2 * math.pi * mes / 12), 6
+                ),
+                "ciclo_mes_cos": round(
+                    math.cos(2 * math.pi * mes / 12), 6
+                ),
+            }
+
+            for campo, esperado in valores.items():
+                actual = copia.get(campo)
+
+                if (
+                    type(actual) in (int, float)
+                    and actual == 0
+                    and math.copysign(1.0, float(actual)) > 0
+                    and esperado == 0
+                    and math.copysign(1.0, esperado) < 0
+                ):
+                    copia[campo] = -0.0
+                    cantidad += 1
+
+        restauradas.append(copia)
+
+    return restauradas, cantidad
+
+
+def firma_snapshot_valida(manifest, filas, firma):
+    """Valida la firma original sin cambiar datos ni firmas."""
+    if firma_snapshot(manifest, filas) == firma:
+        return True
+
+    reconstruidas, cantidad = restaurar_ceros_ciclicos(filas)
+
+    return (
+        cantidad > 0
+        and firma_snapshot(manifest, reconstruidas) == firma
+    )
+
+
 def version_json(d):
     return {
         "id": str(d.id),
@@ -689,10 +746,11 @@ def detalle_dataset(
                 404, "Dataset no encontrado"
             )
 
-        if firma_snapshot(
+        if not firma_snapshot_valida(
             version.manifest,
-            version.snapshot
-        ) != version.signature:
+            version.snapshot,
+            version.signature
+        ):
             raise HTTPException(
                 409, "Firma de integridad incorrecta"
             )
@@ -728,10 +786,11 @@ def revisar_dataset(
                 409, "Dataset ya revisado"
             )
 
-        if firma_snapshot(
+        if not firma_snapshot_valida(
             version.manifest,
-            version.snapshot
-        ) != version.signature:
+            version.snapshot,
+            version.signature
+        ):
             raise HTTPException(
                 409, "Firma de integridad incorrecta"
             )
@@ -812,10 +871,11 @@ def registrar_experimento(
                 409, "Dataset rechazado"
             )
 
-        if firma_snapshot(
+        if not firma_snapshot_valida(
             version.manifest,
-            version.snapshot
-        ) != version.signature:
+            version.snapshot,
+            version.signature
+        ):
             raise HTTPException(
                 409, "Dataset alterado"
             )
