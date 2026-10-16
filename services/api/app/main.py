@@ -7,6 +7,9 @@ app = FastAPI(
     version="1.0.0",
 )
 
+from app.security_controls import LoginRateLimitMiddleware
+app.add_middleware(LoginRateLimitMiddleware)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
