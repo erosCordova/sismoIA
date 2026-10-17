@@ -75,41 +75,227 @@ def actualizar_regla(rule_id: UUID, datos: CambiarEstado,
         db.commit()
         return regla_json(regla)
 
+# SISMOIA_ALERT_GROUP_V1
+
+def _mismo_sismo_probable(a, b):
+    """Coincidencia conservadora entre fuentes distintas."""
+    from math import radians, sin, cos, sqrt, atan2
+
+    if a.id == b.id:
+        return True
+
+    if a.source_id == b.source_id:
+        return False
+
+    fa = a.occurred_at
+    fb = b.occurred_at
+
+    if fa.tzinfo is None:
+        fa = fa.replace(tzinfo=timezone.utc)
+
+    if fb.tzinfo is None:
+        fb = fb.replace(tzinfo=timezone.utc)
+
+    if abs((fa - fb).total_seconds()) > 120:
+        return False
+
+    if abs(float(a.magnitude) - float(b.magnitude)) > 0.3:
+        return False
+
+    if a.depth_km is not None and b.depth_km is not None:
+        if abs(float(a.depth_km) - float(b.depth_km)) > 20:
+            return False
+
+    lat1 = radians(float(a.latitude))
+    lat2 = radians(float(b.latitude))
+    dlat = lat2 - lat1
+
+    dlon = radians(
+        float(b.longitude) - float(a.longitude)
+    )
+
+    hav = (
+        sin(dlat / 2) ** 2
+        + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+    )
+
+    distancia = (
+        2 * 6371.0 *
+        atan2(sqrt(hav), sqrt(max(0.0, 1.0 - hav)))
+    )
+
+    return distancia <= 25.0
+
+
+def _agrupar_sismos(eventos):
+    """Devuelve representantes y numero de registros agrupados."""
+    representantes = []
+
+    ordenados = sorted(
+        eventos,
+        key=lambda e: e.occurred_at,
+        reverse=True
+    )
+
+    for evento in ordenados:
+        if any(
+            _mismo_sismo_probable(evento, anterior)
+            for anterior in representantes
+        ):
+            continue
+
+        representantes.append(evento)
+
+    return representantes, len(eventos) - len(representantes)
+
 def evaluar_registros(dias=7, limite=5000, usuario=None):
     ahora = datetime.now(timezone.utc)
-    desde = (ahora - timedelta(days=dias)).replace(tzinfo=None)
+    desde = (
+        ahora - timedelta(days=dias)
+    ).replace(tzinfo=None)
+
     with Session(engine) as db:
-        reglas = db.scalars(select(AlertRule).where(AlertRule.enabled.is_(True))).all()
-        eventos = db.scalars(select(SeismicEvent).where(
-            SeismicEvent.occurred_at >= desde).order_by(
-            SeismicEvent.occurred_at.desc()).limit(limite + 1)).all()
+        reglas = db.scalars(
+            select(AlertRule).where(
+                AlertRule.enabled.is_(True)
+            )
+        ).all()
+
+        eventos = db.scalars(
+            select(SeismicEvent)
+            .where(SeismicEvent.occurred_at >= desde)
+            .order_by(SeismicEvent.occurred_at.desc())
+            .limit(limite + 1)
+        ).all()
+
         truncado = len(eventos) > limite
         eventos = eventos[:limite]
-        ids = [e.id for e in eventos]
-        existentes = set(db.execute(select(SeismicAlert.rule_id, SeismicAlert.event_id)
-            .where(SeismicAlert.event_id.in_(ids))).all()) if ids else set()
+
+        # Consultar alertas persistidas para evitar duplicados
+        # incluso cuando provengan de otra fuente.
+        anteriores = {}
+
+        if reglas:
+            filas = db.execute(
+                select(
+                    SeismicAlert.rule_id,
+                    SeismicEvent
+                )
+                .join(
+                    SeismicEvent,
+                    SeismicAlert.event_id == SeismicEvent.id
+                )
+                .where(
+                    SeismicAlert.rule_id.in_(
+                        [regla.id for regla in reglas]
+                    ),
+                    SeismicEvent.occurred_at >= (
+                        desde - timedelta(minutes=2)
+                    )
+                )
+            ).all()
+
+            for regla_id, evento in filas:
+                anteriores.setdefault(
+                    regla_id, []
+                ).append(evento)
+
         nuevos = 0
-        for evento in eventos:
-            magnitud = float(evento.magnitude)
-            lat, lon = float(evento.latitude), float(evento.longitude)
-            for regla in reglas:
-                if (regla.id, evento.id) in existentes or magnitud < float(regla.min_magnitude):
+        agrupados_total = 0
+        existentes_omitidos = 0
+
+        for regla in reglas:
+            candidatos = []
+
+            for evento in eventos:
+                magnitud = float(evento.magnitude)
+
+                if magnitud < float(regla.min_magnitude):
                     continue
-                if regla.peru_only and not (-19 <= lat <= 1 and -82 <= lon <= -68):
+
+                lat = float(evento.latitude)
+                lon = float(evento.longitude)
+
+                if regla.peru_only and not (
+                    -19 <= lat <= 1
+                    and -82 <= lon <= -68
+                ):
                     continue
-                if regla.max_depth_km is not None and (
-                    evento.depth_km is None or float(evento.depth_km) > float(regla.max_depth_km)):
+
+                if regla.max_depth_km is not None:
+                    if evento.depth_km is None:
+                        continue
+
+                    if (
+                        float(evento.depth_km)
+                        > float(regla.max_depth_km)
+                    ):
+                        continue
+
+                candidatos.append(evento)
+
+            representantes, agrupados = (
+                _agrupar_sismos(candidatos)
+            )
+
+            agrupados_total += agrupados
+
+            vistos = anteriores.setdefault(
+                regla.id, []
+            )
+
+            for evento in representantes:
+                if any(
+                    _mismo_sismo_probable(evento, previo)
+                    for previo in vistos
+                ):
+                    existentes_omitidos += 1
                     continue
-                db.add(SeismicAlert(rule_id=regla.id, event_id=evento.id,
-                    severity="critical" if magnitud >= 6 else "warning", status="pending"))
+
+                magnitud = float(evento.magnitude)
+
+                db.add(
+                    SeismicAlert(
+                        rule_id=regla.id,
+                        event_id=evento.id,
+                        severity=(
+                            "critical"
+                            if magnitud >= 6
+                            else "warning"
+                        ),
+                        status="pending"
+                    )
+                )
+
+                vistos.append(evento)
                 nuevos += 1
+
         if nuevos:
-            db.add(AlertAction(actor_id=actor_id(usuario or {}), action="alerts.evaluate",
-                details=f"Detectadas {nuevos} alertas internas pendientes de revision"))
+            db.add(
+                AlertAction(
+                    actor_id=actor_id(usuario or {}),
+                    action="alerts.evaluate",
+                    details=(
+                        f"Detectadas {nuevos} alertas "
+                        "internas pendientes de revision"
+                    )
+                )
+            )
+
         db.commit()
-        return {"reglas_activas": len(reglas), "eventos_evaluados": len(eventos),
-                "nuevas_alertas": nuevos, "consulta_limitada": truncado,
-                "aviso": "Alertas internas basadas en observaciones; no son predicciones ni avisos oficiales"}
+
+        return {
+            "reglas_activas": len(reglas),
+            "eventos_evaluados": len(eventos),
+            "nuevas_alertas": nuevos,
+            "consulta_limitada": truncado,
+            "registros_agrupados": agrupados_total,
+            "alertas_existentes_omitidas": existentes_omitidos,
+            "aviso": (
+                "Alertas internas basadas en observaciones; "
+                "no son predicciones ni avisos oficiales"
+            )
+        }
 
 @router.post("/evaluate")
 def evaluar(dias: int = Query(7, ge=1, le=30),
@@ -524,10 +710,10 @@ class SimulacionRegla(NuevaRegla):
 @router.post("/simulate")
 def simular_regla(
     datos: SimulacionRegla,
-    usuario=Depends(
-        requerir_permiso("rules:manage")
-    ),
+    usuario=Depends(requerir_permiso("rules:manage")),
 ):
+    from collections import Counter
+
     ahora = datetime.now(timezone.utc)
     desde = ahora - timedelta(days=datos.dias)
 
@@ -546,25 +732,22 @@ def simular_regla(
         filas = db.execute(
             select(
                 SeismicEvent,
-                DataSource.name,
+                DataSource.name
             )
             .join(
                 DataSource,
                 DataSource.id == SeismicEvent.source_id
             )
             .where(*condiciones_simulacion)
-            .order_by(
-                SeismicEvent.occurred_at.desc()
-            )
+            .order_by(SeismicEvent.occurred_at.desc())
             .limit(5001)
         ).all()
 
     limitada = len(filas) > 5000
     filas = filas[:5000]
 
-    coincidencias = []
-    fuentes = Counter()
-    severidades = Counter()
+    candidatos = []
+    nombres_fuentes = {}
 
     for evento, fuente in filas:
         lat = float(evento.latitude)
@@ -586,13 +769,29 @@ def simular_regla(
             ):
                 continue
 
+        candidatos.append(evento)
+        nombres_fuentes[evento.id] = fuente
+
+    representantes, agrupados = _agrupar_sismos(
+        candidatos
+    )
+
+    coincidencias = []
+    fuentes = Counter()
+    severidades = Counter()
+
+    for evento in representantes:
+        fuente = nombres_fuentes[evento.id]
+        magnitud = float(evento.magnitude)
+
         fuentes[fuente] += 1
 
-        severidades[
-            "critical"
-            if float(evento.magnitude) >= 6
+        severidad = (
+            "critical" if magnitud >= 6
             else "warning"
-        ] += 1
+        )
+
+        severidades[severidad] += 1
 
         coincidencias.append({
             "id": str(evento.id),
@@ -600,9 +799,7 @@ def simular_regla(
                 evento.occurred_at
             ),
             "fuente": fuente,
-            "magnitud": float(
-                evento.magnitude
-            ),
+            "magnitud": magnitud,
             "profundidad_km": (
                 float(evento.depth_km)
                 if evento.depth_km is not None
@@ -616,21 +813,20 @@ def simular_regla(
         "periodo_dias": datos.dias,
         "eventos_examinados": len(filas),
         "coincidencias": len(coincidencias),
+        "coincidencias_registros": len(candidatos),
+        "duplicados_probables_agrupados": agrupados,
         "consulta_limitada": limitada,
         "por_fuente": dict(fuentes),
         "por_severidad": dict(severidades),
         "fuente_permitida": datos.fuente_permitida,
         "guarda_configuracion_de_envio": False,
         "muestra": coincidencias[:10],
-        "fecha_simulacion_utc": fecha_alerta(
-            ahora
-        ),
+        "fecha_simulacion_utc": fecha_alerta(ahora),
         "modo": "simulacion_sin_escritura",
         "advertencia": (
-            "La simulación no crea ni aprueba alertas, "
-            "no modifica reglas y no envía notificaciones. "
-            "Las coincidencias son registros históricos, "
-            "no pronósticos de terremotos. Si la consulta "
-            "está limitada, el conteo es parcial."
+            "Simulacion sin escritura ni notificaciones. "
+            "Agrupacion probable entre fuentes. "
+            "Los registros originales se conservan. "
+            "No son predicciones de terremotos."
         ),
     }
