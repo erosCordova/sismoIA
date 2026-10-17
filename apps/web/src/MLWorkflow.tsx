@@ -1,4 +1,4 @@
-import CatalogWorkspace from "./CatalogWorkspace";
+import GlobalForecastMap from "./GlobalForecastMap";
 import {useState} from "react";
 import {Link} from "react-router-dom";
 
@@ -96,12 +96,12 @@ export default function MLWorkflow({peru}: Props) {
 ) : (
   <section aria-label="Actividad sismica mundial">
     <div style={{padding: "14px 18px", background: "#eff8fc", borderRadius: 12, marginBottom: 12}}>
-      <strong>Actividad sísmica mundial</strong>
+      <strong>Pronóstico probabilístico mundial</strong>
       <p style={{margin: "5px 0 0", fontSize: 13}}>
-        Eventos observados de fuentes sísmicas. Las probabilidades experimentales solo están disponibles para Perú.
+        Probabilidades experimentales por zonas, basadas en el catálogo histórico mundial del USGS.
       </p>
     </div>
-    <CatalogWorkspace modo="mapa" peru={false} />
+    <GlobalForecastMap />
   </section>
 )}
         </section>
