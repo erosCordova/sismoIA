@@ -23,7 +23,7 @@ type Props = {
 type Vista = "datos" | "modelos" | "analisis";
 
 export default function MLWorkflow({peru}: Props) {
-  const [vista, setVista] = useState<Vista>("datos");
+  const [vista, setVista] = useState<Vista>("modelos");
 
   const [revision, setRevision] = useState(0);
 

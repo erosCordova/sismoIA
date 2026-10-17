@@ -14,6 +14,7 @@ import {
 
 import { TokenContext, UsuarioContext } from "./AuthGate";
 import "./sismoia-shell.css";
+import "./sismoia-navigation.css";
 
 type Modulo = {
   nombre: string;
@@ -24,27 +25,24 @@ type Modulo = {
 };
 
 const modulos: Modulo[] = [
-  {nombre:"Dashboard", ruta:"/", grupo:"Monitoreo", icono:LayoutDashboard, permiso:"dashboard:read"},
+  {nombre:"Inicio", ruta:"/", grupo:"Monitoreo", icono:LayoutDashboard, permiso:"dashboard:read"},
   {nombre:"Eventos sísmicos", ruta:"/eventos", grupo:"Monitoreo", icono:Activity, permiso:"events:read"},
   {nombre:"Mapa sísmico", ruta:"/mapa", grupo:"Monitoreo", icono:MapPinned, permiso:"map:read"},
-  {nombre:"Análisis estadístico", ruta:"/analisis", grupo:"Monitoreo", icono:BarChart3, permiso:"analytics:read"},
-
-  {nombre:"Preparación de datos", ruta:"/datos", grupo:"Inteligencia artificial", icono:Database, permiso:"datasets:read"},
-  {nombre:"Modelos ML", ruta:"/modelos", grupo:"Inteligencia artificial", icono:BrainCircuit, permiso:"models:read"},
-  {nombre:"Estimaciones", ruta:"/estimaciones", grupo:"Inteligencia artificial", icono:TrendingUp, permiso:"estimates:read"},
-
-  {nombre:"Reglas de alertas", ruta:"/reglas", grupo:"Operaciones", icono:SlidersHorizontal, permiso:"rules:manage"},
+  {nombre:"Estadísticas", ruta:"/analisis", grupo:"Monitoreo", icono:BarChart3, permiso:"analytics:read"},
+  {nombre:"Fuentes de datos", ruta:"/fuentes", grupo:"Datos e IA", icono:Radio, permiso:"sources:read"},
+  {nombre:"Preparación de datos", ruta:"/datos", grupo:"Datos e IA", icono:Database, permiso:"datasets:read"},
+  {nombre:"Modelos ML", ruta:"/modelos", grupo:"Datos e IA", icono:BrainCircuit, permiso:"models:read"},
+  {nombre:"Estimaciones históricas", ruta:"/estimaciones", grupo:"Datos e IA", icono:TrendingUp, permiso:"estimates:read"},
   {nombre:"Centro de alertas", ruta:"/alertas", grupo:"Operaciones", icono:Bell, permiso:"alerts:read"},
-  {nombre:"Fuentes de datos", ruta:"/fuentes", grupo:"Operaciones", icono:Radio, permiso:"sources:read"},
+  {nombre:"Reglas de alertas", ruta:"/reglas", grupo:"Operaciones", icono:SlidersHorizontal, permiso:"rules:manage"},
   {nombre:"Reportes", ruta:"/reportes", grupo:"Operaciones", icono:FileText, permiso:"reports:read"},
-
   {nombre:"Usuarios y roles", ruta:"/usuarios", grupo:"Administración", icono:Users, permiso:"users:read"},
-  {nombre:"Auditoría y configuración", ruta:"/auditoria", grupo:"Administración", icono:ShieldCheck, permiso:"audit:read"}
+  {nombre:"Auditoría", ruta:"/auditoria", grupo:"Administración", icono:ShieldCheck, permiso:"audit:read"},
 ];
 
 const grupos = [
   "Monitoreo",
-  "Inteligencia artificial",
+  "Datos e IA",
   "Operaciones",
   "Administración"
 ];
@@ -89,6 +87,10 @@ function Plataforma() {
   const token = useContext(TokenContext);
 
   const [peru, setPeru] = useState(true);
+  const [vistaDatos, setVistaDatos] =
+    useState<"explorar" | "calidad" | "guardar">(
+      "explorar"
+    );
   const [busqueda, setBusqueda] = useState("");
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [fuentes, setFuentes] = useState<Diagnostico | null>(null);
@@ -231,7 +233,50 @@ function Plataforma() {
         return <><AnalyticsWorkspace peru={peru} /><SciencePanels modo="analisis" peru={peru} /></>;
 
       case "/datos":
-        return <><PreparationWorkspace peru={peru} /><SciencePanels modo="datos" peru={peru} /><GovernancePanel seccion="datasets" peru={peru} /></>;
+        return (
+          <section className="sismo-data-page">
+            <nav
+              className="sismo-data-tabs"
+              aria-label="Herramientas de datos"
+            >
+              {([
+                ["explorar", "Explorar"],
+                ["calidad", "Calidad"],
+                ["guardar", "Guardar dataset"]
+              ] as const).map(([id, nombre]) => (
+                <button
+                  key={id}
+                  type="button"
+                  aria-pressed={vistaDatos === id}
+                  className={
+                    vistaDatos === id ? "activo" : ""
+                  }
+                  onClick={() => setVistaDatos(id)}
+                >
+                  {nombre}
+                </button>
+              ))}
+            </nav>
+
+            {vistaDatos === "explorar" && (
+              <PreparationWorkspace peru={peru}/>
+            )}
+
+            {vistaDatos === "calidad" && (
+              <SciencePanels
+                modo="datos"
+                peru={peru}
+              />
+            )}
+
+            {vistaDatos === "guardar" && (
+              <GovernancePanel
+                seccion="datasets"
+                peru={peru}
+              />
+            )}
+          </section>
+        );
 
       case "/modelos":
         return <MLWorkflow peru={peru} />;
@@ -382,7 +427,7 @@ function Plataforma() {
             </button>
 
             <div>
-              <small>Panel empresarial</small>
+
               <strong>
                 {modulo?.nombre ?? "Página no encontrada"}
               </strong>

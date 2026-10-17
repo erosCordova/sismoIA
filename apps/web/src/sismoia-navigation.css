@@ -1,0 +1,93 @@
+/* Navegación SISMOIA */
+
+.sismo-shell .sidebar .grupo {
+  margin-bottom: 18px;
+}
+
+.sismo-shell .sidebar .grupo h4 {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .085em;
+  text-transform: uppercase;
+  opacity: .7;
+  margin: 0 0 9px;
+}
+
+.sismo-shell .sidebar .enlace {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 41px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  text-decoration: none;
+  transition: background .15s ease;
+}
+
+.sismo-shell .sidebar .enlace span {
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.sismo-shell .sidebar .enlace:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}
+
+/* Preparación de datos organizada */
+
+.sismo-data-page {
+  width: 100%;
+  min-width: 0;
+}
+
+.sismo-data-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  margin-bottom: 19px;
+  background: #edf4f9;
+  border-radius: 14px;
+}
+
+.sismo-data-tabs button {
+  flex: 1;
+  min-height: 45px;
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: transparent;
+  color: #526f83;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sismo-data-tabs button:hover {
+  background: #dfeef8;
+}
+
+.sismo-data-tabs button.activo {
+  background: #fff;
+  color: #0878ae;
+  box-shadow: 0 2px 10px #14415c17;
+}
+
+.sismo-data-tabs button:focus-visible {
+  outline: 3px solid #0e91c8;
+  outline-offset: 2px;
+}
+
+@media (max-width: 600px) {
+  .sismo-data-tabs {
+    gap: 3px;
+    padding: 4px;
+  }
+
+  .sismo-data-tabs button {
+    padding: 9px 6px;
+    font-size: 11px;
+  }
+}
