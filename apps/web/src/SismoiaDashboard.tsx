@@ -1,4 +1,4 @@
-import MapRegionCamera from "./MapRegionCamera";
+import SismoiaWorldCamera from "./SismoiaWorldCamera";
 import { useContext, useEffect, useState } from "react";
 
 import { Link } from "react-router-dom";
@@ -851,7 +851,7 @@ export default function SismoiaDashboard({ peru }: Props) {
                 }}
 
               >
-                <MapRegionCamera peru={peru} />
+                <SismoiaWorldCamera peru={peru} />
 
                 <TileLayer
 
@@ -947,7 +947,7 @@ export default function SismoiaDashboard({ peru }: Props) {
 
                 ))}
 
-              </MapContainer>
+</MapContainer>
 
             </div>
 

@@ -1,4 +1,4 @@
-import MapRegionCamera from "./MapRegionCamera";
+import SismoiaWorldCamera from "./SismoiaWorldCamera";
 import {
   useContext, useEffect, useMemo, useRef, useState,
   type FormEvent
@@ -712,7 +712,7 @@ export default function CatalogWorkspace({
               scrollWheelZoom
               style={{ width: "100%", height: "100%" }}
             >
-                <MapRegionCamera peru={peru} />
+                <SismoiaWorldCamera peru={peru} />
               <CatalogMapActions
                 onZoom={setZoom}
                 onClick={(lat, lon) => {
@@ -832,7 +832,7 @@ export default function CatalogWorkspace({
                   </Popup>
                 </CircleMarker>
               ))}
-            </MapContainer>
+</MapContainer>
           </div>
 
           <div className="cat-legend">
