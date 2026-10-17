@@ -778,7 +778,10 @@ export default function GovernancePanel({
           </div>
 
           {!datasets.length && (
-            <p>No hay datasets registrados.</p>
+            <div className="gov-empty" role="status">
+              <strong>Sin datasets guardados</strong>
+              <span>Crea uno con el formulario superior.</span>
+            </div>
           )}
         </>
       ) : (
@@ -1136,9 +1139,10 @@ export default function GovernancePanel({
           </div>
 
           {!experimentos.length && (
-            <p>
-              No hay experimentos registrados.
-            </p>
+            <div className="gov-empty" role="status">
+              <strong>Sin modelos todavía</strong>
+              <span>Prepara un dataset para entrenar.</span>
+            </div>
           )}
         </>
       )}

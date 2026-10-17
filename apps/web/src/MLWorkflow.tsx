@@ -3,10 +3,9 @@ import {Link} from "react-router-dom";
 
 import {
   BrainCircuit,
-  Database,
   BarChart3,
-  ArrowRight,
-  Info
+  Database,
+  ArrowRight
 } from "lucide-react";
 
 import GovernancePanel from "./GovernancePanel";
@@ -20,25 +19,23 @@ type Props = {
   peru: boolean;
 };
 
-type Vista = "datos" | "modelos" | "analisis";
+type Vista = "modelos" | "analisis";
 
 export default function MLWorkflow({peru}: Props) {
-  const [vista, setVista] = useState<Vista>("modelos");
-
-  const [revision, setRevision] = useState(0);
+  const [vista, setVista] =
+    useState<Vista>("modelos");
 
   return (
     <main className="mlw mlw-clean">
-
       <header className="mlc-header">
         <div className="mlc-heading">
           <div className="mlc-logo">
-            <BrainCircuit size={26}/>
+            <BrainCircuit size={25}/>
           </div>
 
           <div>
-            <h1>Machine Learning</h1>
-            <p>Entrenamiento y análisis sísmico</p>
+            <h1>Modelos ML</h1>
+            <p>Entrenamiento y evaluación</p>
           </div>
         </div>
 
@@ -49,77 +46,46 @@ export default function MLWorkflow({peru}: Props) {
 
       <nav
         className="mlc-tabs"
-        aria-label="Áreas de Machine Learning"
+        aria-label="Herramientas de modelos"
       >
         <button
           type="button"
-          className={vista === "datos" ? "active" : ""}
-          aria-pressed={vista === "datos"}
-          onClick={() => setVista("datos")}
-        >
-          <Database size={19}/>
-          Datos
-        </button>
-
-        <button
-          type="button"
-          className={vista === "modelos" ? "active" : ""}
           aria-pressed={vista === "modelos"}
+          className={
+            vista === "modelos" ? "active" : ""
+          }
           onClick={() => setVista("modelos")}
         >
-          <BrainCircuit size={19}/>
+          <BrainCircuit size={18}/>
           Modelos
         </button>
 
         <button
           type="button"
-          className={vista === "analisis" ? "active" : ""}
           aria-pressed={vista === "analisis"}
+          className={
+            vista === "analisis" ? "active" : ""
+          }
           onClick={() => setVista("analisis")}
         >
-          <BarChart3 size={19}/>
+          <BarChart3 size={18}/>
           Análisis
         </button>
       </nav>
 
-      {vista === "datos" && (
+      {vista === "modelos" && (
         <section className="mlc-content">
           <div className="mlc-section-head">
-            <div>
-              <h2>Conjuntos de datos</h2>
-              <p>Configura y administra tus datasets.</p>
-            </div>
+            <h2>Entrenar y probar</h2>
 
-            <Link
-              className="mlc-link"
-              to="/datos"
-            >
-              Preparación de datos
+            <Link className="mlc-link" to="/datos">
+              <Database size={17}/>
+              Preparar datos
               <ArrowRight size={16}/>
             </Link>
           </div>
 
           <GovernancePanel
-            seccion="datasets"
-            peru={peru}
-            onDataUpdated={() =>
-              setRevision(actual => actual + 1)
-            }
-          />
-        </section>
-      )}
-
-      {vista === "modelos" && (
-        <section className="mlc-content">
-          <div className="mlc-section-head">
-            <div>
-              <h2>Entrenamiento y resultados</h2>
-              <p>Entrena, compara y prueba tus modelos.</p>
-            </div>
-          </div>
-
-          <GovernancePanel
-            key={revision}
             seccion="experiments"
             peru={peru}
           />
@@ -129,10 +95,7 @@ export default function MLWorkflow({peru}: Props) {
       {vista === "analisis" && (
         <section className="mlc-content">
           <div className="mlc-section-head">
-            <div>
-              <h2>Análisis de modelos</h2>
-              <p>Herramientas y métricas avanzadas.</p>
-            </div>
+            <h2>Análisis avanzado</h2>
           </div>
 
           <ModelsWorkspace/>
@@ -143,16 +106,6 @@ export default function MLWorkflow({peru}: Props) {
           />
         </section>
       )}
-
-      <footer className="mlc-footer">
-        <Info size={16}/>
-        <span>
-          Resultados experimentales basados en
-          datos observados. No pronostican
-          terremotos futuros.
-        </span>
-      </footer>
-
     </main>
   );
 }

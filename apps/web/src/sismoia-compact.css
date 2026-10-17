@@ -131,3 +131,50 @@
     padding: 14px;
   }
 }
+
+
+/* SISMOIA - ESTADOS VACIOS COMPACTOS */
+
+.sismo-shell .gov-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin-top: 18px;
+  padding: 28px 18px;
+  background: #f5faff;
+  border: 1px dashed #bdd9e8;
+  border-radius: 15px;
+  text-align: center;
+}
+
+.sismo-shell .gov-empty strong {
+  font-size: 16px;
+  color: #204a64;
+}
+
+.sismo-shell .gov-empty span {
+  color: #71879a;
+  font-size: 13px;
+}
+
+.sismo-shell .gov-itemtop > span {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #edf5fa;
+  color: #365d74;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sismo-shell .gov-panel .gov-buttons {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.sismo-shell .mlc-content,
+.sismo-shell .gov-panel {
+  min-width: 0;
+}
