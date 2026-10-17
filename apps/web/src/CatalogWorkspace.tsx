@@ -1,3 +1,4 @@
+import MapRegionCamera from "./MapRegionCamera";
 import {
   useContext, useEffect, useMemo, useRef, useState,
   type FormEvent
@@ -711,6 +712,7 @@ export default function CatalogWorkspace({
               scrollWheelZoom
               style={{ width: "100%", height: "100%" }}
             >
+                <MapRegionCamera peru={peru} />
               <CatalogMapActions
                 onZoom={setZoom}
                 onClick={(lat, lon) => {
