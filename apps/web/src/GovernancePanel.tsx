@@ -36,6 +36,9 @@ type Experimento = {
   motivo: string | null;
   resultados: {
     modelo_seleccionado: string;
+    fuente_modelo?: string;
+    advertencia_fuentes?: string;
+    seleccion_sobre?: string;
     objetivo: string;
     variables: string[];
     entrenamiento: number;
@@ -49,6 +52,7 @@ type Experimento = {
       precision?: number;
       recall?: number;
       f1?: number;
+      balanced_accuracy?: number;
       matriz?: number[][];
     }[];
   };
@@ -1052,6 +1056,71 @@ export default function GovernancePanel({
                     );
                   })()}
                 </section>
+
+
+                {(e.resultados.fuente_modelo ||
+                  e.resultados.advertencia_fuentes ||
+                  e.resultados.comparacion.some(
+                    m => typeof m.balanced_accuracy === "number"
+                  )) && (
+                  <section
+                    className="gov-ml-v2-details"
+                    aria-label="Evaluación del modelo ML V2"
+                  >
+                    {e.resultados.fuente_modelo && (
+                      <p>
+                        <strong>Fuente del modelo: </strong>
+                        {e.resultados.fuente_modelo}
+                      </p>
+                    )}
+
+                    {e.resultados.comparacion.some(
+                      m => typeof m.balanced_accuracy === "number"
+                    ) && (
+                      <div>
+                        <strong>
+                          Exactitud balanceada por algoritmo
+                        </strong>
+
+                        <div className="gov-ml-v2-scores">
+                          {e.resultados.comparacion.map(m => (
+                            <div
+                              key={m.modelo}
+                              className={
+                                m.modelo ===
+                                e.resultados.modelo_seleccionado
+                                  ? "gov-ml-v2-score gov-ml-v2-selected"
+                                  : "gov-ml-v2-score"
+                              }
+                            >
+                              <span>{m.modelo}</span>
+                              <strong>
+                                {typeof m.balanced_accuracy === "number"
+                                  ? `${(
+                                      m.balanced_accuracy * 100
+                                    ).toFixed(2)} %`
+                                  : "No disponible"}
+                              </strong>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {e.resultados.advertencia_fuentes && (
+                      <p className="gov-ml-v2-warning">
+                        {e.resultados.advertencia_fuentes}
+                      </p>
+                    )}
+
+                    <p className="gov-ml-v2-caption">
+                      La elección del algoritmo utiliza datos
+                      de desarrollo. Los resultados mostrados
+                      corresponden a una evaluación cronológica
+                      posterior. No pronostican terremotos futuros.
+                    </p>
+                  </section>
+                )}
 
                 <div className="gov-tablewrap">
                   <table>

@@ -528,3 +528,64 @@
 .gov-try-result p {
   color: #315d44;
 }
+
+
+/* SISMOIA ML V2: informacion visible tambien en modo compacto */
+.gov-ml-v2-details {
+  display: grid;
+  gap: 12px;
+  margin: 14px 0;
+  padding: 16px;
+  border: 1px solid #cbdde9;
+  border-radius: 14px;
+  background: rgba(49, 130, 206, 0.045);
+}
+
+.gov-ml-v2-details p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.gov-ml-v2-scores {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit, minmax(min(100%, 185px), 1fr)
+  );
+  gap: 9px;
+  margin-top: 10px;
+}
+
+.gov-ml-v2-score {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 11px 13px;
+  border: 1px solid #d5e0eb;
+  border-radius: 10px;
+  background: #fff;
+  color: #243747;
+}
+
+.gov-ml-v2-score span {
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+.gov-ml-v2-score strong {
+  font-size: 1.06rem;
+}
+
+.gov-ml-v2-selected {
+  border-color: #239b83;
+  background: #edf9f5;
+}
+
+.gov-ml-v2-warning {
+  font-size: 0.84rem;
+  color: #80591a;
+}
+
+.gov-ml-v2-caption {
+  font-size: 0.8rem;
+  opacity: 0.78;
+}
