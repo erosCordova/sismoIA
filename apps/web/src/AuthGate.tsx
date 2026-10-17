@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 
 import "./auth.css";
+import LandingPage from "./LandingPage";
 
 type Usuario = {
   id: string;
@@ -42,6 +43,7 @@ export default function AuthGate({
   children: ReactNode;
 }) {
   const [sesion, setSesion] = useState<Sesion | null>(null);
+  const [pantallaIngreso, setPantallaIngreso] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [mostrarClave, setMostrarClave] = useState(false);
@@ -156,6 +158,7 @@ export default function AuthGate({
 
   function cerrarSesion() {
     setSesion(null);
+    setPantallaIngreso(false);
     setEmail("");
     setPassword("");
     setMostrarClave(false);
@@ -191,6 +194,10 @@ export default function AuthGate({
         </TokenContext.Provider>
       </>
     );
+  }
+
+  if (!pantallaIngreso) {
+    return <LandingPage onIngresar={() => setPantallaIngreso(true)} />;
   }
 
   return (
@@ -263,6 +270,17 @@ export default function AuthGate({
           aria-labelledby="auth-title"
         >
           <div className="auth-panel-top">
+            <button
+              type="button"
+              className="auth-go-back"
+              onClick={() => {
+                setPantallaIngreso(false);
+                setPassword("");
+                setError("");
+              }}
+            >
+              ← Volver al inicio
+            </button>
             <span className="auth-panel-status-dot" />
             Acceso a la plataforma
           </div>
