@@ -555,7 +555,7 @@ export default function GovernancePanel({
 
       {seccion === "datasets" ? (
         <>
-          <h3>Registrar versión de dataset</h3>
+          <h3>Nuevo dataset</h3>
 
 
           <div className="gov-instructions">
@@ -783,7 +783,7 @@ export default function GovernancePanel({
         </>
       ) : (
         <>
-          <h3>Entrenar y registrar experimento</h3>
+          <h3>Entrenar modelo</h3>
 
 
           <div className="gov-instructions">

@@ -15,6 +15,7 @@ import {
 import { TokenContext, UsuarioContext } from "./AuthGate";
 import "./sismoia-shell.css";
 import "./sismoia-navigation.css";
+import "./sismoia-compact.css";
 
 type Modulo = {
   nombre: string;
@@ -87,6 +88,8 @@ function Plataforma() {
   const token = useContext(TokenContext);
 
   const [peru, setPeru] = useState(true);
+  const [vistaDetallada, setVistaDetallada] =
+    useState(false);
   const [vistaDatos, setVistaDatos] =
     useState<"explorar" | "calidad" | "guardar">(
       "explorar"
@@ -308,7 +311,9 @@ function Plataforma() {
   }
 
   return (
-    <div className="app-layout sismo-shell">
+    <div className={`app-layout sismo-shell ${
+      vistaDetallada ? "sismo-detallado" : "sismo-compacto"
+    }`}>
       {menuAbierto && (
         <button
           className="sismo-sidebar-backdrop"
@@ -435,6 +440,18 @@ function Plataforma() {
           </div>
 
           <div className="sismo-topbar-right">
+            <button
+              type="button"
+              className="sismo-density-toggle"
+              aria-pressed={vistaDetallada}
+              onClick={() =>
+                setVistaDetallada(actual => !actual)
+              }
+            >
+              {vistaDetallada
+                ? "Vista sencilla"
+                : "Ver detalles"}
+            </button>
             <div
               className="sismo-source-status"
               role="status"

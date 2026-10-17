@@ -1,0 +1,133 @@
+/* SISMOIA - Vista sencilla y detallada */
+
+.sismo-density-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  min-height: 36px;
+  padding: 8px 13px;
+  border: 1px solid #cbdfea;
+  border-radius: 11px;
+  background: #f4faff;
+  color: #246587;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sismo-density-toggle:hover {
+  background: #e3f3ff;
+}
+
+.sismo-density-toggle:focus-visible {
+  outline: 3px solid #0284c7;
+  outline-offset: 2px;
+}
+
+/* Ocultar información secundaria,
+   nunca acciones ni advertencias importantes. */
+
+.sismo-shell.sismo-compacto .gov-panel > header,
+.sismo-shell.sismo-compacto .gov-banner,
+.sismo-shell.sismo-compacto .gov-foot,
+.sismo-shell.sismo-compacto .gov-items > article > small,
+.sismo-shell.sismo-compacto .gov-tablewrap,
+.sismo-shell.sismo-compacto .prep-header p {
+  display: none;
+}
+
+/* Formularios compactos */
+
+.sismo-shell .gov-panel {
+  min-width: 0;
+}
+
+.sismo-shell .gov-panel h3 {
+  font-size: 17px;
+  font-weight: 750;
+  letter-spacing: -0.025em;
+  color: #183e59;
+  margin: 18px 0 14px;
+}
+
+.sismo-shell .gov-form {
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  align-items: end;
+}
+
+.sismo-shell .gov-form label {
+  min-width: 0;
+}
+
+.sismo-shell .gov-form input:not([type="checkbox"]),
+.sismo-shell .gov-form select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  min-height: 42px;
+  border-radius: 10px;
+}
+
+.sismo-shell .gov-items {
+  display: grid;
+  gap: 13px;
+}
+
+.sismo-shell .gov-items > article {
+  min-width: 0;
+  border: 1px solid #e2ebf2;
+  border-radius: 15px;
+  padding: 18px;
+  background: #ffffff;
+  box-shadow: 0 3px 13px #163d5810;
+}
+
+.sismo-shell .gov-itemtop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.sismo-shell .gov-result-card,
+.sismo-shell .gov-try {
+  border-radius: 13px;
+  box-shadow: none;
+}
+
+.sismo-shell .gov-error,
+.sismo-shell .gov-success,
+.sismo-shell .gov-try-warning,
+.sismo-shell .gov-result-advice {
+  display: block;
+}
+
+/* Mensajes de seguridad visibles */
+
+.sismo-shell .sismo-disclaimer {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* Responsive */
+
+@media (max-width: 780px) {
+  .sismo-density-toggle {
+    min-height: 34px;
+    padding: 7px 10px;
+    font-size: 11px;
+  }
+
+  .sismo-shell .gov-form {
+    grid-template-columns: 1fr;
+  }
+
+  .sismo-shell .gov-items > article {
+    padding: 14px;
+  }
+}
