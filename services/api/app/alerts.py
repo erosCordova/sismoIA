@@ -153,9 +153,12 @@ def evaluar_registros(dias=7, limite=5000, usuario=None):
     # Las alertas operativas no se generan sobre sismos antiguos.
     # La simulacion historica sigue disponible por separado.
     ventana_maxima_horas = 3
+    # SISMOIA_ALERT_RECENT_V1
+    # Evitar alertas nuevas por sismos antiguos.
+    ventana_maxima_horas = 3
     desde = max(
         ahora - timedelta(days=dias),
-        ahora - timedelta(hours=ventana_maxima_horas)
+        ahora - timedelta(hours=ventana_maxima_horas),
     ).replace(tzinfo=None)
     hasta = ahora.replace(tzinfo=None)
 
@@ -168,7 +171,7 @@ def evaluar_registros(dias=7, limite=5000, usuario=None):
 
         eventos = db.scalars(
             select(SeismicEvent)
-            .where(SeismicEvent.occurred_at >= desde, SeismicEvent.occurred_at <= hasta)
+            .where(SeismicEvent.occurred_at.between(desde, ahora.replace(tzinfo=None)), SeismicEvent.occurred_at <= hasta)
             .order_by(SeismicEvent.occurred_at.desc())
             .limit(limite + 1)
         ).all()
