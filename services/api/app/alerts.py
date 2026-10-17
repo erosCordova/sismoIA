@@ -150,9 +150,14 @@ def _agrupar_sismos(eventos):
 
 def evaluar_registros(dias=7, limite=5000, usuario=None):
     ahora = datetime.now(timezone.utc)
-    desde = (
-        ahora - timedelta(days=dias)
+    # Las alertas operativas no se generan sobre sismos antiguos.
+    # La simulacion historica sigue disponible por separado.
+    ventana_maxima_horas = 3
+    desde = max(
+        ahora - timedelta(days=dias),
+        ahora - timedelta(hours=ventana_maxima_horas)
     ).replace(tzinfo=None)
+    hasta = ahora.replace(tzinfo=None)
 
     with Session(engine) as db:
         reglas = db.scalars(
@@ -163,7 +168,7 @@ def evaluar_registros(dias=7, limite=5000, usuario=None):
 
         eventos = db.scalars(
             select(SeismicEvent)
-            .where(SeismicEvent.occurred_at >= desde)
+            .where(SeismicEvent.occurred_at >= desde, SeismicEvent.occurred_at <= hasta)
             .order_by(SeismicEvent.occurred_at.desc())
             .limit(limite + 1)
         ).all()
@@ -285,6 +290,8 @@ def evaluar_registros(dias=7, limite=5000, usuario=None):
         db.commit()
 
         return {
+            "ventana_maxima_horas": ventana_maxima_horas,
+            "tipo_evaluacion": "eventos_recientes",
             "reglas_activas": len(reglas),
             "eventos_evaluados": len(eventos),
             "nuevas_alertas": nuevos,
