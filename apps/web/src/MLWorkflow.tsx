@@ -4,9 +4,8 @@ import {Link} from "react-router-dom";
 import {
   BrainCircuit,
   Database,
-  ArrowRight,
-  ChevronDown,
   BarChart3,
+  ArrowRight,
   Info
 } from "lucide-react";
 
@@ -15,209 +14,145 @@ import ModelsWorkspace from "./ModelsWorkspace";
 import SciencePanels from "./SciencePanels";
 
 import "./ml-workflow.css";
+import "./ml-workflow-clean.css";
 
 type Props = {
   peru: boolean;
 };
 
+type Vista = "datos" | "modelos" | "analisis";
+
 export default function MLWorkflow({peru}: Props) {
-  const [mostrarAvanzado, setMostrarAvanzado] =
-    useState(false);
+  const [vista, setVista] = useState<Vista>("datos");
+
+  const [revision, setRevision] = useState(0);
 
   return (
-    <div className="mlw">
+    <main className="mlw mlw-clean">
 
-      <header className="mlw-header">
-        <div className="mlw-guide">
-          <span className="mlw-guide-label">
-            EMPIEZA AQUÍ
-          </span>
-
-          <h3>
-            Tu primera estimación, paso a paso
-          </h3>
-
-          <p>
-            Sigue este recorrido para crear un modelo
-            y comprobar cómo funciona con datos reales.
-          </p>
-
-          <div className="mlw-guide-grid">
-            <Link to="/datos">
-              <span className="mlw-guide-num">01</span>
-              <strong>Crear datos</strong>
-              <small>Prepara el conjunto de entrenamiento</small>
-            </Link>
-
-            <a href="#ml-entrenamiento">
-              <span className="mlw-guide-num">02</span>
-              <strong>Entrenar un modelo</strong>
-              <small>Escoge regresión o clasificación</small>
-            </a>
-
-            <a href="#ml-entrenamiento">
-              <span className="mlw-guide-num">03</span>
-              <strong>Revisar resultados</strong>
-              <small>Compara métricas y limitaciones</small>
-            </a>
+      <header className="mlc-header">
+        <div className="mlc-heading">
+          <div className="mlc-logo">
+            <BrainCircuit size={26}/>
           </div>
-        </div>
-
-
-        <div className="mlw-headline">
-          <BrainCircuit size={27}/>
 
           <div>
-            <h2>Modelos de Machine Learning</h2>
-
-            <p>
-              Entrena modelos, compara sus resultados
-              y revisa los experimentos registrados.
-            </p>
+            <h1>Machine Learning</h1>
+            <p>Entrenamiento y análisis sísmico</p>
           </div>
         </div>
 
-        <div className="mlw-notice">
-          <Database size={22}/>
-
-          <div>
-            <strong>
-              Primero prepara y registra tus datos
-            </strong>
-
-            <p>
-              La limpieza, calidad, registro y
-              aprobación de datasets se realizan
-              exclusivamente en el módulo
-              Preparación de datos.
-            </p>
-
-            <Link to="/datos">
-              Ir a Preparación de datos
-              <ArrowRight size={17}/>
-            </Link>
-          </div>
-        </div>
-
-        <nav
-          className="mlw-nav"
-          aria-label="Apartados de Modelos ML"
-        >
-          <a href="#ml-entrenamiento">
-            1. Entrenar y revisar
-          </a>
-
-          <a href="#ml-analisis">
-            2. Análisis adicionales
-          </a>
-        </nav>
+        <span className="mlc-context">
+          {peru ? "Perú" : "Global"}
+        </span>
       </header>
 
-      <section
-        className="mlw-stage"
-        id="ml-entrenamiento"
+      <nav
+        className="mlc-tabs"
+        aria-label="Áreas de Machine Learning"
       >
-        <div className="mlw-stage-head">
-          <span className="mlw-number">1</span>
-
-          <div>
-            <h3>
-              Entrenar y revisar los resultados
-            </h3>
-
-            <p>
-              Selecciona un dataset registrado,
-              elige regresión o clasificación
-              y pulsa «Entrenar y guardar».
-            </p>
-
-            <p>
-              Debajo encontrarás los experimentos
-              registrados, sus métricas y
-              sus estados de revisión.
-            </p>
-          </div>
-        </div>
-
-        <GovernancePanel
-          seccion="experiments"
-          peru={peru}
-        />
-      </section>
-
-      <section
-        className="mlw-stage"
-        id="ml-analisis"
-      >
-        <div className="mlw-stage-head">
-          <span className="mlw-number">2</span>
-
-          <div>
-            <h3>
-              Análisis adicionales
-            </h3>
-
-            <p>
-              Explora agrupaciones, comparaciones
-              y laboratorios experimentales.
-              Estos análisis son complementarios
-              al entrenamiento registrado.
-            </p>
-          </div>
-        </div>
+        <button
+          type="button"
+          className={vista === "datos" ? "active" : ""}
+          aria-pressed={vista === "datos"}
+          onClick={() => setVista("datos")}
+        >
+          <Database size={19}/>
+          Datos
+        </button>
 
         <button
           type="button"
-          className="mlw-expand"
-          aria-expanded={mostrarAvanzado}
-          onClick={() =>
-            setMostrarAvanzado(v => !v)
-          }
+          className={vista === "modelos" ? "active" : ""}
+          aria-pressed={vista === "modelos"}
+          onClick={() => setVista("modelos")}
         >
-          <BarChart3 size={18}/>
-
-          {mostrarAvanzado
-            ? "Ocultar análisis avanzados"
-            : "Mostrar análisis avanzados"}
-
-          <ChevronDown size={18}/>
+          <BrainCircuit size={19}/>
+          Modelos
         </button>
 
-        {mostrarAvanzado && (
-          <div className="mlw-extra">
-            <ModelsWorkspace/>
+        <button
+          type="button"
+          className={vista === "analisis" ? "active" : ""}
+          aria-pressed={vista === "analisis"}
+          onClick={() => setVista("analisis")}
+        >
+          <BarChart3 size={19}/>
+          Análisis
+        </button>
+      </nav>
 
-            <SciencePanels
-              modo="modelos"
-              peru={peru}
-            />
-          </div>
-        )}
-      </section>
+      {vista === "datos" && (
+        <section className="mlc-content">
+          <div className="mlc-section-head">
+            <div>
+              <h2>Conjuntos de datos</h2>
+              <p>Configura y administra tus datasets.</p>
+            </div>
 
-      <footer className="mlw-footer">
-        <div className="mlw-headline">
-          <Info size={20}/>
-
-          <div>
-            <h3>Consulta de estimaciones</h3>
-
-            <p>
-              Las estimaciones actuales describen
-              estadísticas históricas; no son
-              predicciones del próximo terremoto
-              ni resultados automáticos de los
-              modelos entrenados.
-            </p>
-
-            <Link to="/estimaciones">
-              Ir a Estimaciones
-              <ArrowRight size={17}/>
+            <Link
+              className="mlc-link"
+              to="/datos"
+            >
+              Preparación de datos
+              <ArrowRight size={16}/>
             </Link>
           </div>
-        </div>
+
+          <GovernancePanel
+            seccion="datasets"
+            peru={peru}
+            onDataUpdated={() =>
+              setRevision(actual => actual + 1)
+            }
+          />
+        </section>
+      )}
+
+      {vista === "modelos" && (
+        <section className="mlc-content">
+          <div className="mlc-section-head">
+            <div>
+              <h2>Entrenamiento y resultados</h2>
+              <p>Entrena, compara y prueba tus modelos.</p>
+            </div>
+          </div>
+
+          <GovernancePanel
+            key={revision}
+            seccion="experiments"
+            peru={peru}
+          />
+        </section>
+      )}
+
+      {vista === "analisis" && (
+        <section className="mlc-content">
+          <div className="mlc-section-head">
+            <div>
+              <h2>Análisis de modelos</h2>
+              <p>Herramientas y métricas avanzadas.</p>
+            </div>
+          </div>
+
+          <ModelsWorkspace/>
+
+          <SciencePanels
+            modo="modelos"
+            peru={peru}
+          />
+        </section>
+      )}
+
+      <footer className="mlc-footer">
+        <Info size={16}/>
+        <span>
+          Resultados experimentales basados en
+          datos observados. No pronostican
+          terremotos futuros.
+        </span>
       </footer>
 
-    </div>
+    </main>
   );
 }

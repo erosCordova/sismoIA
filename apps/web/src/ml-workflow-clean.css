@@ -1,0 +1,295 @@
+/* SISMOIA - INTERFAZ ML LIMPIA */
+
+.mlw-clean {
+  width: 100%;
+  max-width: 1380px;
+  margin: 0 auto;
+  padding: 24px;
+  box-sizing: border-box;
+  color: #19364e;
+}
+
+.mlw-clean .mlc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 22px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+.mlc-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.mlc-logo {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: #e1f2ff;
+  color: #147fb7;
+}
+
+.mlc-heading h1 {
+  font-size: clamp(22px, 2.5vw, 29px);
+  line-height: 1.2;
+  margin: 0;
+  color: #15374d;
+}
+
+.mlc-heading p {
+  font-size: 13px;
+  color: #70879b;
+  margin: 5px 0 0;
+}
+
+.mlc-context {
+  font-size: 12px;
+  font-weight: 700;
+  color: #28769c;
+  padding: 8px 15px;
+  border-radius: 999px;
+  background: #e8f6ff;
+}
+
+.mlc-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 22px;
+  padding: 7px;
+  background: #edf4f9;
+  border-radius: 17px;
+}
+
+.mlc-tabs button {
+  appearance: none;
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  flex: 1;
+  min-height: 48px;
+  border-radius: 12px;
+  background: transparent;
+  color: #567286;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background .18s ease,
+    color .18s ease,
+    box-shadow .18s ease;
+}
+
+.mlc-tabs button:hover {
+  background: #e0edf6;
+  color: #145e86;
+}
+
+.mlc-tabs button.active {
+  background: #fff;
+  color: #0878ae;
+  box-shadow: 0 2px 10px #1a47651a;
+}
+
+.mlc-tabs button:focus-visible {
+  outline: 3px solid #0f8fc4;
+  outline-offset: 2px;
+}
+
+.mlc-content {
+  background: #fff;
+  border: 1px solid #e2ecf2;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 5px 24px #1b4b6810;
+}
+
+.mlc-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.mlc-section-head h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #173f59;
+}
+
+.mlc-section-head p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: #718799;
+}
+
+.mlc-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 13px;
+  background: #e6f5ff;
+  color: #147fb2;
+  text-decoration: none;
+  border-radius: 11px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.mlc-link:hover {
+  background: #d4eeff;
+}
+
+/* Evitar encabezados repetidos */
+
+.mlw-clean .gov-panel > header {
+  display: none;
+}
+
+/* Mantener avisos importantes sin que dominen */
+.mlw-clean .gov-banner {
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+}
+
+/* Formularios compactos */
+
+.mlw-clean .gov-form {
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fit, minmax(190px, 1fr));
+  gap: 16px;
+  align-items: end;
+}
+
+.mlw-clean .gov-form label {
+  min-width: 0;
+}
+
+.mlw-clean .gov-form input,
+.mlw-clean .gov-form select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.mlw-clean .gov-form button {
+  min-height: 44px;
+}
+
+/* Tarjetas de datasets y modelos */
+
+.mlw-clean .gov-items {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.mlw-clean .gov-items > article {
+  min-width: 0;
+  border-radius: 15px;
+  border: 1px solid #e2eaf0;
+  padding: 18px;
+  background: #fff;
+}
+
+.mlw-clean .gov-itemtop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.mlw-clean .gov-itemtop strong {
+  font-size: 15px;
+  color: #183f59;
+}
+
+.mlw-clean .gov-tablewrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.mlw-clean .gov-panel small {
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.mlw-clean .gov-panel h3 {
+  margin-top: 22px;
+  margin-bottom: 14px;
+  font-size: 16px;
+}
+
+.mlc-footer {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 18px;
+  padding: 10px 5px;
+  font-size: 12px;
+  color: #73899a;
+}
+
+.mlc-footer svg {
+  flex-shrink: 0;
+}
+
+/* Pantallas pequeñas */
+
+@media (max-width: 720px) {
+  .mlw-clean {
+    padding: 12px;
+  }
+
+  .mlc-content {
+    padding: 16px;
+    border-radius: 15px;
+  }
+
+  .mlc-tabs {
+    gap: 4px;
+    padding: 5px;
+  }
+
+  .mlc-tabs button {
+    font-size: 12px;
+    gap: 6px;
+    min-height: 44px;
+  }
+
+  .mlc-tabs button svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .mlc-section-head {
+    align-items: stretch;
+  }
+
+  .mlc-link {
+    justify-content: center;
+  }
+
+  .mlw-clean .gov-form {
+    grid-template-columns: 1fr;
+  }
+
+  .mlc-heading h1 {
+    font-size: 21px;
+  }
+}
