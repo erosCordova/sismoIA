@@ -1,3 +1,4 @@
+import CatalogWorkspace from "./CatalogWorkspace";
 import {useState} from "react";
 import {Link} from "react-router-dom";
 
@@ -89,7 +90,20 @@ export default function MLWorkflow({peru}: Props) {
 
       {vista === "pronosticos" && (
         <section className="mlc-content">
-          <SeismicForecastMap/>
+          {/* SISMOIA_ML_GLOBAL_OBSERVADO_V1 */}
+{peru ? (
+  <SeismicForecastMap/>
+) : (
+  <section aria-label="Actividad sismica mundial">
+    <div style={{padding: "14px 18px", background: "#eff8fc", borderRadius: 12, marginBottom: 12}}>
+      <strong>Actividad sísmica mundial</strong>
+      <p style={{margin: "5px 0 0", fontSize: 13}}>
+        Eventos observados de fuentes sísmicas. Las probabilidades experimentales solo están disponibles para Perú.
+      </p>
+    </div>
+    <CatalogWorkspace modo="mapa" peru={false} />
+  </section>
+)}
         </section>
       )}
 
