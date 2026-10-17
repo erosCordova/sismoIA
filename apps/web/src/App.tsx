@@ -16,6 +16,7 @@ import { TokenContext, UsuarioContext } from "./AuthGate";
 import "./sismoia-shell.css";
 import "./sismoia-navigation.css";
 import "./sismoia-compact.css";
+import "./sismoia-design.css";
 
 type Modulo = {
   nombre: string;
@@ -440,18 +441,21 @@ function Plataforma() {
           </div>
 
           <div className="sismo-topbar-right">
-            <button
-              type="button"
-              className="sismo-density-toggle"
-              aria-pressed={vistaDetallada}
-              onClick={() =>
-                setVistaDetallada(actual => !actual)
-              }
-            >
-              {vistaDetallada
-                ? "Vista sencilla"
-                : "Ver detalles"}
-            </button>
+            {(modulo?.ruta === "/datos" ||
+              modulo?.ruta === "/modelos") && (
+              <button
+                type="button"
+                className="sismo-density-toggle"
+                aria-pressed={vistaDetallada}
+                onClick={() =>
+                  setVistaDetallada(actual => !actual)
+                }
+              >
+                {vistaDetallada
+                  ? "Vista sencilla"
+                  : "Ver detalles"}
+              </button>
+            )}
             <div
               className="sismo-source-status"
               role="status"

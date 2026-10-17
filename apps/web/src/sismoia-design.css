@@ -1,0 +1,237 @@
+/* SISMOIA Enterprise - Sistema visual unificado */
+
+.sismo-shell {
+  --ui-primary: #087eaf;
+  --ui-primary-soft: #e8f6fe;
+  --ui-border: #dfeaf1;
+  --ui-heading: #183a52;
+  --ui-muted: #687f91;
+  --ui-surface: #fff;
+  --ui-radius: 15px;
+}
+
+/* Superficies */
+
+.sismo-shell .prep-card,
+.sismo-shell .panel,
+.sismo-shell .gov-items > article {
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  box-shadow: 0 3px 14px rgba(20, 61, 88, .045);
+}
+
+.sismo-shell .prep-card,
+.sismo-shell .panel {
+  padding: clamp(16px, 2vw, 23px);
+  min-width: 0;
+}
+
+/* Encabezados compactos */
+
+.sismo-shell .prep-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 19px;
+}
+
+.sismo-shell .prep-header h2,
+.sismo-shell .mlc-section-head h2 {
+  color: var(--ui-heading);
+  line-height: 1.3;
+  letter-spacing: -.025em;
+}
+
+.sismo-shell .prep-header h2 {
+  margin: 0;
+  font-size: clamp(19px, 2vw, 24px);
+}
+
+.sismo-shell .prep-card h3,
+.sismo-shell .panel h3 {
+  color: var(--ui-heading);
+  line-height: 1.35;
+  margin-top: 0;
+}
+
+/* Espacios y textos */
+
+.sismo-shell .prep-root,
+.sismo-shell .gov-panel,
+.sismo-shell .mlw-clean {
+  min-width: 0;
+}
+
+.sismo-shell .prep-root p,
+.sismo-shell .gov-panel p {
+  line-height: 1.55;
+}
+
+.sismo-shell .gov-itemtop strong {
+  color: var(--ui-heading);
+  line-height: 1.4;
+}
+
+/* Filtros */
+
+.sismo-shell .sismo-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+}
+
+.sismo-shell .sismo-filter-bar > label {
+  flex: 1 1 170px;
+  min-width: 0;
+}
+
+.sismo-shell .sismo-filter-bar input,
+.sismo-shell .sismo-filter-bar select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* Controles */
+
+.sismo-shell .prep-root input:not([type="checkbox"]),
+.sismo-shell .prep-root select,
+.sismo-shell .prep-root textarea,
+.sismo-shell .gov-panel input:not([type="checkbox"]),
+.sismo-shell .gov-panel select,
+.sismo-shell .gov-panel textarea {
+  border: 1px solid #cadde9;
+  border-radius: 10px;
+  background-color: #fff;
+  color: #223e54;
+  min-height: 41px;
+  max-width: 100%;
+}
+
+.sismo-shell .prep-root input:focus-visible,
+.sismo-shell .prep-root select:focus-visible,
+.sismo-shell .prep-root textarea:focus-visible,
+.sismo-shell .gov-panel input:focus-visible,
+.sismo-shell .gov-panel select:focus-visible,
+.sismo-shell .gov-panel textarea:focus-visible {
+  outline: 2px solid #48aee0;
+  outline-offset: 2px;
+}
+
+/* Botones */
+
+.sismo-shell .prep-root button,
+.sismo-shell .gov-panel button {
+  border-radius: 10px;
+  transition:
+    filter .15s ease,
+    background .15s ease,
+    border-color .15s ease;
+}
+
+.sismo-shell .prep-root button:not(:disabled):hover,
+.sismo-shell .gov-panel button:not(:disabled):hover {
+  filter: brightness(.96);
+}
+
+.sismo-shell button:disabled {
+  cursor: not-allowed;
+}
+
+/* Tablas legibles */
+
+.sismo-shell .prep-root table,
+.sismo-shell .gov-panel table,
+.sismo-shell .panel table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+
+.sismo-shell .prep-root th,
+.sismo-shell .gov-panel th,
+.sismo-shell .panel th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 750;
+  color: #517187;
+  background: #f2f7fb;
+}
+
+.sismo-shell .prep-root td,
+.sismo-shell .gov-panel td,
+.sismo-shell .panel td {
+  font-size: 13px;
+  color: #304c61;
+}
+
+.sismo-shell .prep-root th,
+.sismo-shell .prep-root td,
+.sismo-shell .gov-panel th,
+.sismo-shell .gov-panel td,
+.sismo-shell .panel th,
+.sismo-shell .panel td {
+  padding: 11px 13px;
+  border-bottom: 1px solid #e8eff4;
+}
+
+.sismo-shell .prep-root tbody tr:hover,
+.sismo-shell .gov-panel tbody tr:hover,
+.sismo-shell .panel tbody tr:hover {
+  background: #f7fbfe;
+}
+
+/* Métricas */
+
+.sismo-shell .prep-metrics {
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.sismo-shell .prep-metrics > article {
+  min-width: 0;
+  border: 1px solid var(--ui-border);
+  background: #fff;
+  border-radius: 13px;
+  padding: 15px;
+}
+
+/* Adaptación móvil */
+
+@media (max-width: 780px) {
+  .sismo-shell .prep-header {
+    align-items: stretch;
+  }
+
+  .sismo-shell .prep-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .sismo-shell .sismo-filter-bar > label {
+    flex-basis: 100%;
+  }
+
+  .sismo-shell .prep-card,
+  .sismo-shell .panel {
+    padding: 15px;
+  }
+
+  .sismo-shell .prep-metrics {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .sismo-shell .prep-metrics {
+    grid-template-columns: 1fr;
+  }
+}
