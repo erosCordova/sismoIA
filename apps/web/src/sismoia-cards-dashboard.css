@@ -1,0 +1,185 @@
+
+/*
+  SISMOIA ENTERPRISE
+  Cuatro colores del dashboard en indicadores pequenos.
+
+  No modifica:
+  - Dashboard aprobado
+  - Tarjetas grandes
+  - Tablas
+  - Formularios
+  - Mapas
+  - Graficos
+*/
+
+/* TARJETAS PEQUENAS: ESTRUCTURA REAL DEL PROYECTO */
+
+.sismo-shell main .prep-metrics > article {
+  background: linear-gradient(
+    130deg,
+    #06334e,
+    #075a79
+  ) !important;
+
+  background-color: #06334e !important;
+  color: #ffffff !important;
+  border: 1px solid #087da4 !important;
+  border-radius: 15px !important;
+  box-shadow: 0 9px 20px rgba(5,38,62,.15) !important;
+}
+
+/* PRIMERA: AZUL */
+
+.sismo-shell main .prep-metrics > article:nth-child(4n+1) {
+  background: linear-gradient(
+    130deg,
+    #06334e 0%,
+    #075a79 100%
+  ) !important;
+  border-color: #087da4 !important;
+}
+
+/* SEGUNDA: CYAN */
+
+.sismo-shell main .prep-metrics > article:nth-child(4n+2) {
+  background: linear-gradient(
+    130deg,
+    #006170 0%,
+    #069fba 100%
+  ) !important;
+  border-color: #04a8ca !important;
+}
+
+/* TERCERA: ESMERALDA */
+
+.sismo-shell main .prep-metrics > article:nth-child(4n+3) {
+  background: linear-gradient(
+    130deg,
+    #00645e 0%,
+    #05947c 100%
+  ) !important;
+  border-color: #02aa95 !important;
+}
+
+/* CUARTA: AZUL CORPORATIVO OSCURO */
+
+.sismo-shell main .prep-metrics > article:nth-child(4n+4) {
+  background: linear-gradient(
+    130deg,
+    #142d48 0%,
+    #075075 100%
+  ) !important;
+  border-color: #11749c !important;
+}
+
+/* TEXTO BLANCO EN INDICADORES */
+
+.sismo-shell main .prep-metrics > article :is(
+  h1, h2, h3, h4, p, span, small, strong
+) {
+  color: #ffffff !important;
+}
+
+.sismo-shell main .prep-metrics > article > strong {
+  font-weight: 800;
+}
+
+/* OTRAS TARJETAS EXPLICITAMENTE IDENTIFICADAS COMO METRICAS */
+
+.sismo-shell main :is(
+  .ml-small-metric,
+  .analytics-stat-card,
+  .gov-metric,
+  .metric-card,
+  .metric-tile,
+  .kpi-card,
+  .sismo-kpi,
+  .ml-metric-card,
+  .stats-tile
+):not(.dash *):not(:has(
+  table, form, textarea, canvas,
+  .recharts-wrapper, .leaflet-container
+)) {
+  background: linear-gradient(
+    130deg, #06334e, #075a79
+  ) !important;
+  color: white !important;
+  border: 1px solid #087da4 !important;
+  border-radius: 15px !important;
+}
+
+.sismo-shell main :is(
+  .ml-small-metric,
+  .analytics-stat-card,
+  .gov-metric,
+  .metric-card,
+  .metric-tile,
+  .kpi-card,
+  .sismo-kpi,
+  .ml-metric-card,
+  .stats-tile
+):not(.dash *):nth-child(4n+2):not(:has(
+  table, form, textarea, canvas,
+  .recharts-wrapper, .leaflet-container
+)) {
+  background: linear-gradient(
+    130deg, #006170, #069fba
+  ) !important;
+}
+
+.sismo-shell main :is(
+  .ml-small-metric,
+  .analytics-stat-card,
+  .gov-metric,
+  .metric-card,
+  .metric-tile,
+  .kpi-card,
+  .sismo-kpi,
+  .ml-metric-card,
+  .stats-tile
+):not(.dash *):nth-child(4n+3):not(:has(
+  table, form, textarea, canvas,
+  .recharts-wrapper, .leaflet-container
+)) {
+  background: linear-gradient(
+    130deg, #00645e, #05947c
+  ) !important;
+}
+
+.sismo-shell main :is(
+  .ml-small-metric,
+  .analytics-stat-card,
+  .gov-metric,
+  .metric-card,
+  .metric-tile,
+  .kpi-card,
+  .sismo-kpi,
+  .ml-metric-card,
+  .stats-tile
+):not(.dash *):nth-child(4n+4):not(:has(
+  table, form, textarea, canvas,
+  .recharts-wrapper, .leaflet-container
+)) {
+  background: linear-gradient(
+    130deg, #142d48, #075075
+  ) !important;
+}
+
+/* TEXTO DE OTRAS TARJETAS PEQUENAS */
+
+.sismo-shell main :is(
+  .ml-small-metric,
+  .analytics-stat-card,
+  .gov-metric,
+  .metric-card,
+  .metric-tile,
+  .kpi-card,
+  .sismo-kpi,
+  .ml-metric-card,
+  .stats-tile
+):not(.dash *):not(:has(
+  table, form, textarea, canvas,
+  .recharts-wrapper, .leaflet-container
+)) :is(h1,h2,h3,h4,p,span,small,strong) {
+  color: white !important;
+}

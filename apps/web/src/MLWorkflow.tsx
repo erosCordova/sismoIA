@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 
 import GovernancePanel from "./GovernancePanel";
+import SeismicForecastMap from "./SeismicForecastMap";
+import {MapPinned} from "lucide-react";
 import ModelsWorkspace from "./ModelsWorkspace";
 import SciencePanels from "./SciencePanels";
 
@@ -19,11 +21,11 @@ type Props = {
   peru: boolean;
 };
 
-type Vista = "modelos" | "analisis";
+type Vista = "pronosticos" | "modelos" | "analisis";
 
 export default function MLWorkflow({peru}: Props) {
   const [vista, setVista] =
-    useState<Vista>("modelos");
+    useState<Vista>("pronosticos");
 
   return (
     <main className="mlw mlw-clean">
@@ -35,7 +37,7 @@ export default function MLWorkflow({peru}: Props) {
 
           <div>
             <h1>Modelos ML</h1>
-            <p>Entrenamiento y evaluación</p>
+
           </div>
         </div>
 
@@ -48,6 +50,18 @@ export default function MLWorkflow({peru}: Props) {
         className="mlc-tabs"
         aria-label="Herramientas de modelos"
       >
+        <button
+          type="button"
+          aria-pressed={vista === "pronosticos"}
+          className={
+            vista === "pronosticos" ? "active" : ""
+          }
+          onClick={() => setVista("pronosticos")}
+        >
+          <MapPinned size={18}/>
+          Pronósticos
+        </button>
+
         <button
           type="button"
           aria-pressed={vista === "modelos"}
@@ -72,6 +86,12 @@ export default function MLWorkflow({peru}: Props) {
           Análisis
         </button>
       </nav>
+
+      {vista === "pronosticos" && (
+        <section className="mlc-content">
+          <SeismicForecastMap/>
+        </section>
+      )}
 
       {vista === "modelos" && (
         <section className="mlc-content">

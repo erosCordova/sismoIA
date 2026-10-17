@@ -1,0 +1,478 @@
+
+/*
+  SISMOIA ENTERPRISE
+  IDENTIDAD VISUAL GLOBAL
+
+  Fondo blanco
+  Sidebar navy
+  Azul corporativo
+  Cyan luminoso
+  Verde esmeralda
+
+  El dashboard aprobado mantiene sus estilos propios.
+*/
+
+:root {
+  --premium-navy: #041d33;
+  --premium-navy-light: #0b3854;
+  --premium-blue: #075b84;
+  --premium-cyan: #12c9eb;
+  --premium-emerald: #05c99c;
+
+  --premium-white: #ffffff;
+  --premium-ice: #f5faff;
+  --premium-border: #dceaf3;
+  --premium-text: #17364f;
+  --premium-muted: #647e91;
+
+  --premium-shadow:
+    0 8px 24px rgba(11, 49, 77, .07);
+}
+
+/* FONDO GENERAL */
+
+body,
+#root,
+.sismo-shell,
+.sismo-shell main {
+  background: var(--premium-white) !important;
+}
+
+.sismo-shell {
+  color: var(--premium-text);
+}
+
+/* SIDEBAR OSCURO */
+
+.sismo-shell > aside,
+.sismo-shell .sidebar,
+.sismo-shell .sismo-sidebar,
+.sismo-shell .app-sidebar {
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(18, 201, 235, .10),
+      transparent 42%
+    ),
+    linear-gradient(
+      180deg,
+      #031b30 0%,
+      #06283f 52%,
+      #03192b 100%
+    ) !important;
+
+  color: #ffffff !important;
+
+  border-right:
+    1px solid rgba(32, 183, 222, .22) !important;
+}
+
+.sismo-shell > aside :is(a, button) {
+  border-radius: 11px;
+}
+
+.sismo-shell > aside :is(a, button):hover {
+  background: rgba(17, 193, 230, .12);
+}
+
+.sismo-shell > aside :is(
+  a.active,
+  a[aria-current="page"],
+  button.active
+) {
+  color: #ffffff !important;
+
+  background: linear-gradient(
+    100deg,
+    #005b80,
+    #078caa
+  ) !important;
+
+  border: 1px solid #19cbeb !important;
+}
+
+/* BARRA SUPERIOR */
+
+.sismo-shell :is(
+  .topbar,
+  .sismo-topbar,
+  .app-topbar,
+  .app-header
+) {
+  background: #ffffff !important;
+  border-bottom:
+    1px solid var(--premium-border) !important;
+}
+
+.sismo-shell :is(
+  .topbar,
+  .sismo-topbar,
+  .app-topbar
+) input {
+  background: #f3f9fd !important;
+  border: 1px solid #d6e7f0 !important;
+  border-radius: 12px !important;
+}
+
+/* TITULOS EN LOS MODULOS */
+
+.sismo-shell main :is(h1, h2, h3) {
+  letter-spacing: -.02em;
+}
+
+.sismo-shell main :is(
+  .page-title,
+  .module-title,
+  .workspace-title,
+  .section-title
+) {
+  color: #123b58;
+  font-weight: 800;
+}
+
+/* CABECERAS DE LAS PAGINAS */
+
+.sismo-shell main :is(
+  .page-header,
+  .module-header,
+  .workspace-header,
+  .section-heading
+):not(.dash *) {
+  border-radius: 15px;
+  border: 1px solid #dceaf3;
+  background: linear-gradient(
+    115deg,
+    #ffffff,
+    #f0faff
+  );
+
+  padding: 17px 20px;
+}
+
+/* TARJETAS Y PANELES */
+
+.sismo-shell main :is(
+  .prep-card,
+  .sismo-card,
+  .sismo-panel,
+  .gov-result-card,
+  .gov-tablewrap,
+  .gov-ml-v2-details,
+  .management-card,
+  .science-card,
+  .analytics-card,
+  .report-card,
+  .seis-card,
+  .ml-card,
+  .page-card,
+  .workspace-card,
+  .catalog-card,
+  .source-card,
+  .sources-card,
+  .gov-card,
+  .ml-panel,
+  .report-panel,
+  .data-panel
+):not(.dash *) {
+  background: #ffffff !important;
+
+  border: 1px solid var(--premium-border) !important;
+  border-radius: 16px !important;
+
+  box-shadow: var(--premium-shadow) !important;
+}
+
+/* OTRAS TARJETAS CONVENCIONALES */
+
+.sismo-shell main :is(
+  [class$="-card"],
+  [class$="-panel"]
+):not(.dash *)
+:not([class*="danger"])
+:not([class*="warning"])
+:not([class*="alert"])
+:not([class*="error"])
+:not([class*="hero"])
+:not([class*="kpi"])
+:not([class*="metric"])
+:not([class*="map"])
+:not([class*="chart"]) {
+  background-color: #ffffff;
+  border-color: #dceaf3;
+  border-radius: 16px;
+}
+
+/* INDICADORES PREMIUM */
+
+.sismo-shell main :is(
+  .metric-card,
+  .kpi-card,
+  .stat-card,
+  .stats-card,
+  .metric-tile,
+  .stats-tile,
+  .gov-metric,
+  .sismo-kpi
+):not(.dash *) {
+  background: linear-gradient(
+    135deg,
+    #062a46,
+    #0b5879
+  ) !important;
+
+  border: 1px solid #0e729b !important;
+  border-radius: 15px !important;
+
+  box-shadow:
+    0 10px 22px rgba(4, 36, 60, .13) !important;
+}
+
+.sismo-shell main :is(
+  .metric-card,
+  .kpi-card,
+  .stat-card,
+  .stats-card,
+  .metric-tile,
+  .stats-tile,
+  .gov-metric,
+  .sismo-kpi
+):not(.dash *) :is(
+  h2, h3, h4, p, span, strong, small
+) {
+  color: white !important;
+}
+
+/* TABLAS */
+
+.sismo-shell main table {
+  background: white;
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+
+.sismo-shell main thead {
+  background: #eaf5fc;
+}
+
+.sismo-shell main th {
+  color: #164461;
+  font-weight: 750;
+}
+
+.sismo-shell main th,
+.sismo-shell main td {
+  border-bottom: 1px solid #e6eff5;
+}
+
+.sismo-shell main tbody tr {
+  transition: background .15s ease;
+}
+
+.sismo-shell main tbody tr:hover {
+  background: #f3faff;
+}
+
+/* FORMULARIOS */
+
+.sismo-shell main :is(
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea
+):not(.dash *) {
+  background-color: white !important;
+  color: #173b54 !important;
+
+  border: 1px solid #d1e2ec !important;
+  border-radius: 11px !important;
+
+  transition:
+    border-color .18s ease,
+    box-shadow .18s ease;
+}
+
+.sismo-shell main :is(
+  input,
+  select,
+  textarea
+):not(.dash *):focus-visible {
+  border-color: #13bddc !important;
+
+  outline: 2px solid rgba(19, 189, 220, .17);
+  outline-offset: 1px;
+}
+
+/* BOTONES PRINCIPALES */
+
+.sismo-shell main :is(
+  button[type="submit"],
+  .btn-primary,
+  .button-primary,
+  .primary-button,
+  .gov-primary,
+  .sismo-primary,
+  .seis-primary
+):not(.dash *)
+:not([class*="danger"])
+:not([class*="delete"])
+:not([class*="destructive"]) {
+  background: linear-gradient(
+    110deg,
+    #057ea4,
+    #0db9d4
+  ) !important;
+
+  color: #ffffff !important;
+
+  border: 1px solid #16bbd8 !important;
+  border-radius: 11px !important;
+
+  box-shadow:
+    0 5px 14px rgba(8, 155, 190, .14);
+}
+
+.sismo-shell main :is(
+  button[type="submit"],
+  .btn-primary,
+  .button-primary,
+  .primary-button,
+  .gov-primary,
+  .sismo-primary,
+  .seis-primary
+):not(.dash *)
+:not([class*="danger"])
+:not([class*="delete"])
+:not([class*="destructive"]):hover {
+  filter: brightness(1.06);
+}
+
+/* BOTONES SECUNDARIOS */
+
+.sismo-shell main :is(
+  .btn-secondary,
+  .button-secondary,
+  .secondary-button
+):not(.dash *) {
+  background: #f1f9fd;
+  border: 1px solid #cce4f0;
+  color: #155a7a;
+  border-radius: 11px;
+}
+
+/* PESTANAS */
+
+.sismo-shell main :is(
+  .tabs,
+  .gov-tabs,
+  .sismo-tabs,
+  .tab-list,
+  [role="tablist"]
+):not(.dash *) {
+  border-radius: 13px;
+}
+
+.sismo-shell main :is(
+  .tab.active,
+  .gov-tab.active,
+  .sismo-tab.active,
+  [role="tab"][aria-selected="true"]
+):not(.dash *) {
+  background: linear-gradient(
+    115deg,
+    #e4faff,
+    #d1f4fc
+  ) !important;
+
+  border-color: #72d6e8 !important;
+  color: #075e78 !important;
+  font-weight: 800;
+}
+
+/* ETIQUETAS Y ESTADOS */
+
+.sismo-shell main :is(
+  .status-success,
+  .status-ok,
+  .badge-success
+):not(.dash *) {
+  color: #08785e;
+  background-color: #e8fbf4;
+}
+
+.sismo-shell main :is(
+  .status-info,
+  .badge-info
+):not(.dash *) {
+  color: #087c9f;
+  background-color: #e5f8fd;
+}
+
+/* DIVISORES */
+
+.sismo-shell main hr {
+  border: 0;
+  border-top: 1px solid #e0ecf4;
+}
+
+/* SCROLLBARS */
+
+.sismo-shell * {
+  scrollbar-width: thin;
+  scrollbar-color: #a6c9db transparent;
+}
+
+/* ENFOQUE ACCESIBLE */
+
+.sismo-shell :is(a, button):focus-visible {
+  outline: 2px solid #17b8d6;
+  outline-offset: 3px;
+}
+
+/* ANIMACIONES DISCRETAS */
+
+@media (prefers-reduced-motion: no-preference) {
+  .sismo-shell main :is(
+    .prep-card,
+    .gov-result-card,
+    .management-card,
+    .report-card
+  ):not(.dash *) {
+    transition:
+      box-shadow .18s ease,
+      border-color .18s ease;
+  }
+
+  .sismo-shell main :is(
+    .prep-card,
+    .gov-result-card,
+    .management-card,
+    .report-card
+  ):not(.dash *):hover {
+    border-color: #c4e0ef !important;
+    box-shadow:
+      0 10px 25px rgba(10, 64, 97, .10) !important;
+  }
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 768px) {
+  .sismo-shell main :is(
+    .page-header,
+    .module-header,
+    .workspace-header
+  ):not(.dash *) {
+    padding: 13px 15px;
+  }
+
+  .sismo-shell main :is(
+    .prep-card,
+    .sismo-card,
+    .gov-result-card,
+    .management-card,
+    .science-card,
+    .report-card
+  ):not(.dash *) {
+    border-radius: 13px !important;
+  }
+}

@@ -1,0 +1,447 @@
+
+/* SISMOIA - DISENO 6
+   Fondo blanco, sidebar navy, tarjetas premium,
+   mapa principal y distribucion de magnitudes.
+*/
+
+.sismo-shell,
+.sismo-shell main {
+  background: #ffffff !important;
+}
+
+.sismo-shell > aside,
+.sismo-shell .sismo-sidebar,
+.sismo-shell .app-sidebar {
+  background: linear-gradient(
+    175deg,
+    #03182d 0%,
+    #06283f 60%,
+    #03192d 100%
+  ) !important;
+
+  color: white !important;
+  border-right: 1px solid #144b66 !important;
+}
+
+.sismo-shell > aside a,
+.sismo-shell > aside button {
+  color: #f0f8ff !important;
+}
+
+.sismo-shell > aside a:is(.active, [aria-current="page"]) {
+  background: linear-gradient(
+    90deg,
+    #005c83,
+    #008ca9
+  ) !important;
+
+  border: 1px solid #14cdef !important;
+  color: white !important;
+}
+
+.sismo-shell .dash {
+  gap: 15px !important;
+  color: #16334a;
+}
+
+/* BANNER SUPERIOR */
+
+.sismo-shell .dash-welcome {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(2, 21, 43, .85),
+      rgba(2, 31, 53, .2)
+    ),
+    url("./assets/hero.png") center / cover no-repeat !important;
+
+  border: 1px solid #0b7390 !important;
+  min-height: 160px !important;
+  border-radius: 15px !important;
+  box-shadow: 0 9px 24px #0a29401b !important;
+  padding: 24px 27px !important;
+}
+
+.sismo-shell .dash-welcome h2 {
+  font-size: clamp(26px, 2.7vw, 34px) !important;
+  color: white !important;
+  font-weight: 850 !important;
+}
+
+.sismo-shell .dash-welcome p,
+.sismo-shell .dash-welcome .dash-eyebrow {
+  color: #e5faff !important;
+}
+
+.sismo-shell .dash-welcome .dash-filter-group {
+  background: rgba(1, 32, 52, .45);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.sismo-shell .dash-welcome select {
+  background: white !important;
+  color: #164560 !important;
+}
+
+/* CUATRO INDICADORES */
+
+.sismo-shell .dash-kpis {
+  gap: 13px !important;
+}
+
+.sismo-shell .dash-kpi {
+  min-height: 122px;
+  padding: 18px !important;
+  position: relative;
+  border-radius: 15px !important;
+  border: 1px solid #0d81a8 !important;
+  border-top: 1px solid #0d81a8 !important;
+  color: white !important;
+
+  box-shadow: 0 9px 20px #06284020 !important;
+
+  background: linear-gradient(
+    130deg,
+    #03283f,
+    #075a80
+  ) !important;
+}
+
+.sismo-shell .dash-kpi:nth-child(2) {
+  background: linear-gradient(
+    130deg,
+    #00535e,
+    #039bbb
+  ) !important;
+}
+
+.sismo-shell .dash-kpi:nth-child(3) {
+  background: linear-gradient(
+    130deg,
+    #065459,
+    #008773
+  ) !important;
+}
+
+.sismo-shell .dash-kpi:nth-child(4) {
+  background: linear-gradient(
+    130deg,
+    #152a42,
+    #064b73
+  ) !important;
+}
+
+.sismo-shell .dash-kpi :is(strong, span, small) {
+  color: white !important;
+}
+
+.sismo-shell .dash-kpi strong {
+  font-size: clamp(24px, 2.4vw, 35px) !important;
+}
+
+.sismo-shell .dash-kpi-top {
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+  gap: 14px;
+  color: #e7faff !important;
+}
+
+.sismo-shell .dash-kpi-top svg {
+  width: 30px;
+  height: 30px;
+  color: #1be3fb !important;
+}
+
+.sismo-shell .dash-kpi:nth-child(2) svg,
+.sismo-shell .dash-kpi:nth-child(3) svg {
+  color: #02e0b2 !important;
+}
+
+.sismo-shell .dash-kpi:nth-child(4) svg {
+  color: #ff5760 !important;
+}
+
+/* PANELES */
+
+.sismo-shell .dash-card {
+  border: 1px solid #deebf4 !important;
+  border-radius: 15px !important;
+  background: white !important;
+
+  box-shadow: 0 8px 23px #153f5d10 !important;
+  padding: 17px !important;
+}
+
+.sismo-shell .dash-card h3 {
+  color: #14344e !important;
+  font-size: 17px !important;
+  font-weight: 800;
+}
+
+/* MAPA IZQUIERDA, DONUT DERECHA */
+
+.s6-map-donut-layout {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1.55fr)
+    minmax(310px, 1fr);
+  gap: 15px;
+  min-width: 0;
+}
+
+.s6-map-donut-layout > * {
+  min-width: 0;
+}
+
+.s6-map-donut-layout .dash-map-card {
+  margin: 0;
+}
+
+.s6-map-donut-layout .dash-map {
+  height: 350px !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+
+.s6-map-donut-layout .dash-map-legend {
+  margin-top: 10px;
+}
+
+.s6-map-donut-layout .dash-map .leaflet-container {
+  z-index: 0 !important;
+}
+
+/* GRAFICO CIRCULAR */
+
+.s6-activity-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.s6-donut-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 16px;
+  min-height: 280px;
+}
+
+.s6-donut {
+  width: clamp(145px, 16vw, 210px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  flex: none;
+
+  display: grid;
+  place-items: center;
+}
+
+.s6-donut-hole {
+  background: white;
+  border-radius: 50%;
+  width: 69%;
+  height: 69%;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.s6-donut-hole strong {
+  font-size: clamp(20px, 2vw, 30px);
+  color: #173750;
+}
+
+.s6-donut-hole span {
+  font-size: 11px;
+  color: #627c94;
+  max-width: 85px;
+}
+
+.s6-donut-legend {
+  flex: 1;
+  min-width: 100px;
+}
+
+.s6-donut-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #516d84;
+
+  border-bottom: 1px solid #e7eef4;
+  padding: 10px 0;
+}
+
+.s6-donut-row span {
+  flex: 1;
+}
+
+.s6-donut-row strong {
+  font-weight: 750;
+  color: #183c56;
+}
+
+.s6-donut-row i {
+  width: 12px;
+  height: 12px;
+  flex: none;
+  border-radius: 50%;
+}
+
+.s6-note {
+  font-size: 10px;
+  color: #73899b;
+  margin: 6px 0 0;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 1280px) {
+  .s6-map-donut-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .s6-donut-content {
+    min-height: 230px;
+  }
+}
+
+@media (max-width: 650px) {
+  .s6-donut-content {
+    flex-direction: column;
+  }
+
+  .s6-donut-legend {
+    width: 100%;
+  }
+
+  .sismo-shell .dash-kpi {
+    padding: 12px !important;
+    min-height: 105px;
+  }
+}
+
+
+/* HERO_FIX_START */
+.sismo-shell .dash-welcome {
+  position: relative !important;
+  overflow: hidden !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 520px) !important;
+  align-items: center !important;
+  gap: 24px !important;
+  min-height: 170px !important;
+  padding: 24px 26px !important;
+  border-radius: 18px !important;
+  border: 1px solid #0b7fa4 !important;
+  box-shadow: 0 12px 28px rgba(8, 37, 61, 0.16) !important;
+  background:
+    linear-gradient(90deg, rgba(2,18,37,.68) 0%, rgba(2,18,37,.34) 44%, rgba(2,18,37,.18) 100%),
+    url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%201600%20360%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22sky%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2307213e%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2245%25%22%20stop-color%3D%22%230b3e6a%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2275%25%22%20stop-color%3D%22%230c6b8d%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%2304192c%22/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3CradialGradient%20id%3D%22moonGlow%22%20cx%3D%2265%25%22%20cy%3D%2227%25%22%20r%3D%2220%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23dffcff%22%20stop-opacity%3D%220.95%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2245%25%22%20stop-color%3D%22%2384f0ff%22%20stop-opacity%3D%220.28%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%2384f0ff%22%20stop-opacity%3D%220%22/%3E%0A%20%20%20%20%3C/radialGradient%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22m1%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23163a61%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23071625%22/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22m2%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%231f567e%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%230a1d2f%22/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22m3%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%232a83a8%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%2310263b%22/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%20%20%3C/defs%3E%0A%0A%20%20%3Crect%20width%3D%221600%22%20height%3D%22360%22%20fill%3D%22url%28%23sky%29%22/%3E%0A%20%20%3Crect%20width%3D%221600%22%20height%3D%22360%22%20fill%3D%22url%28%23moonGlow%29%22/%3E%0A%20%20%3Ccircle%20cx%3D%221040%22%20cy%3D%2275%22%20r%3D%2218%22%20fill%3D%22%23e8ffff%22/%3E%0A%0A%20%20%3Cpath%20d%3D%22M0%20210%20L150%20120%20L230%20165%20L370%2092%20L470%20165%20L560%20110%20L700%20210%20L860%2095%20L1010%20195%20L1160%2092%20L1295%20180%20L1455%20102%20L1600%20175%20L1600%20360%20L0%20360%20Z%22%20fill%3D%22url%28%23m1%29%22/%3E%0A%20%20%3Cpath%20d%3D%22M0%20245%20L120%20180%20L220%20210%20L330%20145%20L420%20210%20L520%20160%20L650%20235%20L790%20150%20L920%20242%20L1060%20138%20L1180%20220%20L1320%20155%20L1470%20235%20L1600%20185%20L1600%20360%20L0%20360%20Z%22%20fill%3D%22url%28%23m2%29%22/%3E%0A%20%20%3Cpath%20d%3D%22M0%20275%20L95%20230%20L170%20258%20L295%20190%20L365%20246%20L470%20208%20L580%20266%20L690%20210%20L810%20272%20L945%20200%20L1075%20270%20L1190%20220%20L1325%20288%20L1475%20215%20L1600%20280%20L1600%20360%20L0%20360%20Z%22%20fill%3D%22url%28%23m3%29%22%20opacity%3D%220.92%22/%3E%0A%0A%20%20%3Cpath%20d%3D%22M126%20183%20L150%20120%20L178%20178%20Z%22%20fill%3D%22%23d7fbff%22%20opacity%3D%220.96%22/%3E%0A%20%20%3Cpath%20d%3D%22M344%20126%20L370%2092%20L394%20126%20Z%22%20fill%3D%22%23e7feff%22%20opacity%3D%220.96%22/%3E%0A%20%20%3Cpath%20d%3D%22M542%20129%20L560%20110%20L580%20134%20Z%22%20fill%3D%22%23d9fbff%22%20opacity%3D%220.95%22/%3E%0A%20%20%3Cpath%20d%3D%22M840%20121%20L860%2095%20L882%20126%20Z%22%20fill%3D%22%23e7feff%22%20opacity%3D%220.96%22/%3E%0A%20%20%3Cpath%20d%3D%22M1138%20122%20L1160%2092%20L1184%20130%20Z%22%20fill%3D%22%23e7feff%22%20opacity%3D%220.96%22/%3E%0A%20%20%3Cpath%20d%3D%22M1430%20125%20L1455%20102%20L1478%20132%20Z%22%20fill%3D%22%23d9fbff%22%20opacity%3D%220.95%22/%3E%0A%3C/svg%3E") center/cover no-repeat !important;
+}
+
+.sismo-shell .dash-welcome > * {
+  position: relative;
+  z-index: 2;
+}
+
+.sismo-shell .dash-welcome > :first-child {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+}
+
+.sismo-shell .dash-welcome .dash-eyebrow {
+  color: #dffbff !important;
+  letter-spacing: .14em !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+}
+
+.sismo-shell .dash-welcome h2 {
+  margin: 0 !important;
+  color: #ffffff !important;
+  font-size: clamp(32px, 3vw, 46px) !important;
+  line-height: 1.03 !important;
+  font-weight: 850 !important;
+}
+
+.sismo-shell .dash-welcome p {
+  margin: 0 !important;
+  color: #eefcff !important;
+  font-size: 14px !important;
+  max-width: 650px !important;
+}
+
+.sismo-shell .dash-welcome .dash-filter-group {
+  width: 100% !important;
+  align-self: center !important;
+  justify-self: end !important;
+  background: rgba(7, 39, 60, 0.62) !important;
+  border: 1px solid rgba(142, 226, 244, 0.24) !important;
+  backdrop-filter: blur(8px) !important;
+  border-radius: 16px !important;
+  padding: 14px 16px !important;
+  box-shadow: 0 8px 20px rgba(4, 22, 39, 0.18) !important;
+}
+
+.sismo-shell .dash-welcome .dash-filter-group label,
+.sismo-shell .dash-welcome .dash-filter-group span,
+.sismo-shell .dash-welcome .dash-filter-group small {
+  color: #f1fdff !important;
+  font-weight: 700 !important;
+}
+
+.sismo-shell .dash-welcome .dash-filter-group :is(select, input) {
+  background: #ffffff !important;
+  border: 1px solid #cfe4ee !important;
+  color: #143852 !important;
+  border-radius: 14px !important;
+  min-height: 44px !important;
+}
+
+.sismo-shell .dash-welcome .dash-filter-group button {
+  background: linear-gradient(180deg, #dffbff, #bceff8) !important;
+  border: 1px solid #b4e6ef !important;
+  color: #0d5871 !important;
+  border-radius: 14px !important;
+  font-weight: 800 !important;
+  min-height: 44px !important;
+  box-shadow: none !important;
+}
+
+.sismo-shell .dash-welcome .dash-filter-group button:hover {
+  filter: brightness(1.03);
+}
+
+@media (max-width: 1080px) {
+  .sismo-shell .dash-welcome {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  .sismo-shell .dash-welcome .dash-filter-group {
+    justify-self: stretch !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .sismo-shell .dash-welcome {
+    min-height: auto !important;
+    padding: 18px !important;
+  }
+
+  .sismo-shell .dash-welcome h2 {
+    font-size: 30px !important;
+  }
+}
+/* HERO_FIX_END */

@@ -1,0 +1,635 @@
+
+
+/* SISMOIA - DISENO APROBADO
+
+   layout blanco + sidebar oscuro + hero oscuro + tarjetas premium
+
+*/
+
+
+
+:root {
+
+  --sx-bg: #ffffff;
+
+  --sx-bg-soft: #f6fbff;
+
+  --sx-panel: #ffffff;
+
+  --sx-border: #d9e6f0;
+
+  --sx-text: #153047;
+
+  --sx-text-soft: #5f7488;
+
+
+
+  --sx-dark-1: #031a2d;
+
+  --sx-dark-2: #07253d;
+
+  --sx-dark-3: #0b385a;
+
+
+
+  --sx-cyan: #10d8ff;
+
+  --sx-cyan-soft: #73e9ff;
+
+  --sx-cyan-deep: #00b8d9;
+
+  --sx-green: #17d9a6;
+
+  --sx-red: #ff5a5a;
+
+}
+
+
+
+html {
+
+  color-scheme: light;
+
+}
+
+
+
+body,
+
+#root,
+
+.sismo-shell {
+
+  background: var(--sx-bg) !important;
+
+  color: var(--sx-text);
+
+}
+
+
+
+body {
+
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
+
+}
+
+
+
+.sismo-shell {
+
+  min-height: 100vh;
+
+}
+
+
+
+.sismo-shell main {
+
+  background: var(--sx-bg) !important;
+
+}
+
+
+
+/* ===== SIDEBAR OSCURO ===== */
+
+.sismo-shell :is(.sidebar, .sismo-sidebar, .app-sidebar, aside) {
+
+  background:
+
+    radial-gradient(circle at top left, rgba(16,216,255,.12), transparent 30%),
+
+    linear-gradient(180deg, #04203a 0%, #03182a 100%) !important;
+
+  color: #ffffff !important;
+
+  border-right: 1px solid rgba(91, 194, 255, .18) !important;
+
+}
+
+
+
+.sismo-shell :is(.sidebar, .sismo-sidebar, .app-sidebar, aside) :is(a, button) {
+
+  color: rgba(255,255,255,.9) !important;
+
+  border-radius: 14px !important;
+
+  transition: all .18s ease;
+
+}
+
+
+
+.sismo-shell :is(.sidebar, .sismo-sidebar, .app-sidebar, aside) :is(a:hover, button:hover) {
+
+  background: rgba(16, 216, 255, .12) !important;
+
+  color: #ffffff !important;
+
+}
+
+
+
+.sismo-shell :is(.sidebar, .sismo-sidebar, .app-sidebar, aside) :is(
+
+  a.active,
+
+  a[aria-current="page"],
+
+  .active,
+
+  button.active
+
+) {
+
+  background: linear-gradient(90deg, rgba(16,216,255,.28), rgba(16,216,255,.14)) !important;
+
+  color: #ffffff !important;
+
+  border: 1px solid rgba(16,216,255,.45) !important;
+
+  box-shadow: 0 0 0 1px rgba(16,216,255,.14) inset;
+
+}
+
+
+
+/* ===== TOPBAR BLANCA ===== */
+
+.sismo-shell :is(.topbar, .sismo-topbar, .app-topbar) {
+
+  background: #ffffff !important;
+
+  border-bottom: 1px solid var(--sx-border) !important;
+
+  box-shadow: 0 4px 16px rgba(10,42,68,.05);
+
+}
+
+
+
+.sismo-shell :is(.topbar, .sismo-topbar, .app-topbar) :is(input, select) {
+
+  background: #f8fcff !important;
+
+  border: 1px solid #d8e8f2 !important;
+
+  border-radius: 16px !important;
+
+}
+
+
+
+/* ===== HERO / BANNER ===== */
+
+.sismo-shell :is(
+
+  .dashboard-hero,
+
+  .hero-banner,
+
+  .hero-card,
+
+  .sismo-hero,
+
+  .dashboard-header,
+
+  .panel-hero
+
+) {
+
+  position: relative;
+
+  overflow: hidden;
+
+  border-radius: 22px !important;
+
+  padding: 28px 30px !important;
+
+  color: #ffffff !important;
+
+  background:
+
+    linear-gradient(180deg, rgba(3,26,45,.12), rgba(3,26,45,.28)),
+
+    url("data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%201600%20340%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22bg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%230b2d4f%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2250%25%22%20stop-color%3D%22%230b4970%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23031525%22/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22glow%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%220%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2309d7ff%22%20stop-opacity%3D%220.15%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2255%25%22%20stop-color%3D%22%2300f0ff%22%20stop-opacity%3D%220.35%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%2356ffd4%22%20stop-opacity%3D%220.18%22/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22mount1%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23163f69%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23071a2e%22/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22mount2%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%231e5f8d%22/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%230a2035%22/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%20%20%3C/defs%3E%0A%20%20%3Crect%20width%3D%221600%22%20height%3D%22340%22%20fill%3D%22url%28%23bg%29%22/%3E%0A%20%20%3Crect%20width%3D%221600%22%20height%3D%22340%22%20fill%3D%22url%28%23glow%29%22/%3E%0A%20%20%3Ccircle%20cx%3D%221080%22%20cy%3D%2272%22%20r%3D%2218%22%20fill%3D%22%23d8ffff%22%20opacity%3D%220.95%22/%3E%0A%20%20%3Cg%20opacity%3D%220.9%22%3E%0A%20%20%20%20%3Cpath%20d%3D%22M0%20230%20L130%20120%20L210%20170%20L320%2095%20L420%20190%20L520%20115%20L650%20205%20L760%20105%20L900%20195%20L1030%2090%20L1140%20175%20L1260%20110%20L1370%20185%20L1500%20105%20L1600%20170%20L1600%20340%20L0%20340%20Z%22%20fill%3D%22url%28%23mount1%29%22/%3E%0A%20%20%20%20%3Cpath%20d%3D%22M0%20250%20L110%20180%20L190%20210%20L290%20145%20L375%20220%20L470%20150%20L575%20225%20L670%20165%20L790%20235%20L905%20145%20L1000%20215%20L1115%20135%20L1220%20220%20L1340%20160%20L1475%20245%20L1600%20190%20L1600%20340%20L0%20340%20Z%22%20fill%3D%22url%28%23mount2%29%22/%3E%0A%20%20%20%20%3Cpath%20d%3D%22M85%20198%20L130%20120%20L160%20165%20Z%22%20fill%3D%22%23d8f6ff%22%20opacity%3D%220.9%22/%3E%0A%20%20%20%20%3Cpath%20d%3D%22M286%20145%20L320%2095%20L350%20145%20Z%22%20fill%3D%22%23d8f6ff%22%20opacity%3D%220.88%22/%3E%0A%20%20%20%20%3Cpath%20d%3D%22M495%20150%20L520%20115%20L545%20150%20Z%22%20fill%3D%22%23d8f6ff%22%20opacity%3D%220.88%22/%3E%0A%20%20%20%20%3Cpath%20d%3D%22M739%20126%20L760%20105%20L785%20134%20Z%22%20fill%3D%22%23e3fbff%22%20opacity%3D%220.9%22/%3E%0A%20%20%20%20%3Cpath%20d%3D%22M1002%20118%20L1030%2090%20L1056%20126%20Z%22%20fill%3D%22%23e3fbff%22%20opacity%3D%220.92%22/%3E%0A%20%20%20%20%3Cpath%20d%3D%22M1235%20130%20L1260%20110%20L1290%20145%20Z%22%20fill%3D%22%23d8f6ff%22%20opacity%3D%220.88%22/%3E%0A%20%20%20%20%3Cpath%20d%3D%22M1470%20126%20L1500%20105%20L1528%20138%20Z%22%20fill%3D%22%23d8f6ff%22%20opacity%3D%220.9%22/%3E%0A%20%20%3C/g%3E%0A%3C/svg%3E") center/cover no-repeat !important;
+
+  border: 1px solid rgba(16,216,255,.18) !important;
+
+  box-shadow: 0 14px 28px rgba(4, 22, 39, .18);
+
+}
+
+
+
+.sismo-shell :is(
+
+  .dashboard-hero,
+
+  .hero-banner,
+
+  .hero-card,
+
+  .sismo-hero,
+
+  .dashboard-header,
+
+  .panel-hero
+
+) :is(h1, h2, h3, h4, p, span, small) {
+
+  color: #ffffff !important;
+
+}
+
+
+
+/* ===== CONTENEDORES GENERALES BLANCOS ===== */
+
+.sismo-shell :is(
+
+  .prep-card,
+
+  .sismo-card,
+
+  .sismo-panel,
+
+  .gov-result-card,
+
+  .gov-tablewrap,
+
+  .gov-ml-v2-details,
+
+  .management-card,
+
+  .science-card,
+
+  .analytics-card,
+
+  .report-card
+
+) {
+
+  background: var(--sx-panel) !important;
+
+  border: 1px solid var(--sx-border) !important;
+
+  border-radius: 20px !important;
+
+  box-shadow: 0 8px 24px rgba(17, 47, 77, .06);
+
+}
+
+
+
+/* ===== TARJETAS OSCURAS TIPO KPI ===== */
+
+.sismo-shell :is(
+
+  .prep-metrics > article,
+
+  .metrics-grid > article,
+
+  .stats-grid > article,
+
+  .dashboard-metrics > article,
+
+  .kpi-grid > article,
+
+  .summary-grid > article,
+
+  .metric-card,
+
+  .kpi-card,
+
+  .dashboard-stat
+
+) {
+
+  background:
+
+    radial-gradient(circle at top left, rgba(16,216,255,.13), transparent 26%),
+
+    linear-gradient(135deg, #062846 0%, #0a3c61 55%, #083352 100%) !important;
+
+  color: #ffffff !important;
+
+  border: 1px solid rgba(16,216,255,.24) !important;
+
+  border-radius: 18px !important;
+
+  box-shadow: 0 12px 24px rgba(6, 31, 54, .18);
+
+}
+
+
+
+.sismo-shell :is(
+
+  .prep-metrics > article,
+
+  .metrics-grid > article,
+
+  .stats-grid > article,
+
+  .dashboard-metrics > article,
+
+  .kpi-grid > article,
+
+  .summary-grid > article,
+
+  .metric-card,
+
+  .kpi-card,
+
+  .dashboard-stat
+
+) :is(h1, h2, h3, h4, strong, span, small, p) {
+
+  color: #ffffff !important;
+
+}
+
+
+
+.sismo-shell :is(
+
+  .prep-metrics > article,
+
+  .metrics-grid > article,
+
+  .stats-grid > article,
+
+  .dashboard-metrics > article,
+
+  .kpi-grid > article,
+
+  .summary-grid > article,
+
+  .metric-card,
+
+  .kpi-card,
+
+  .dashboard-stat
+
+) strong {
+
+  font-size: clamp(1.6rem, 2vw, 2.5rem);
+
+  font-weight: 800;
+
+}
+
+
+
+/* ===== MAPA / GRAFICOS ===== */
+
+.sismo-shell :is(
+
+  .map-card,
+
+  .map-panel,
+
+  .dashboard-map,
+
+  .realtime-card,
+
+  .chart-card
+
+) {
+
+  background: #ffffff !important;
+
+  border: 1px solid var(--sx-border) !important;
+
+  border-radius: 20px !important;
+
+  box-shadow: 0 8px 24px rgba(17, 47, 77, .06);
+
+}
+
+
+
+/* ===== TABLAS ===== */
+
+.sismo-shell .gov-tablewrap {
+
+  overflow-x: auto;
+
+}
+
+
+
+.sismo-shell .gov-tablewrap table {
+
+  background: #ffffff;
+
+}
+
+
+
+.sismo-shell .gov-tablewrap thead {
+
+  background: #eef7fd !important;
+
+}
+
+
+
+.sismo-shell .gov-tablewrap th {
+
+  color: #0f3553 !important;
+
+}
+
+
+
+.sismo-shell .gov-tablewrap tbody tr:hover {
+
+  background: #f8fcff !important;
+
+}
+
+
+
+/* ===== FORMULARIOS ===== */
+
+.sismo-shell main :is(
+
+  input:not([type="checkbox"]):not([type="radio"]),
+
+  select,
+
+  textarea
+
+) {
+
+  background: #ffffff !important;
+
+  border: 1px solid #cfe0ec !important;
+
+  border-radius: 14px !important;
+
+  color: var(--sx-text) !important;
+
+}
+
+
+
+.sismo-shell :is(input, select, textarea):focus-visible {
+
+  outline: 2px solid rgba(16,216,255,.55) !important;
+
+  outline-offset: 2px;
+
+  border-color: rgba(16,216,255,.62) !important;
+
+}
+
+
+
+/* ===== BOTONES ===== */
+
+.sismo-shell :is(
+
+  button[type="submit"],
+
+  .btn-primary,
+
+  .button-primary,
+
+  .primary-button,
+
+  .sismo-primary,
+
+  .gov-primary
+
+):not([class*="danger"]):not([class*="delete"]) {
+
+  background: linear-gradient(180deg, #12c6f0, #08a7ce) !important;
+
+  border: 1px solid rgba(16,216,255,.45) !important;
+
+  color: #ffffff !important;
+
+  border-radius: 14px !important;
+
+  box-shadow: 0 10px 18px rgba(8, 167, 206, .18);
+
+}
+
+
+
+.sismo-shell :is(
+
+  button[type="submit"],
+
+  .btn-primary,
+
+  .button-primary,
+
+  .primary-button,
+
+  .sismo-primary,
+
+  .gov-primary
+
+):not([class*="danger"]):not([class*="delete"]):hover {
+
+  filter: brightness(1.05);
+
+}
+
+
+
+/* ===== PESTANAS ===== */
+
+.sismo-shell :is(
+
+  [role="tab"][aria-selected="true"],
+
+  .sismo-tab.active,
+
+  .gov-tab.active
+
+) {
+
+  background: linear-gradient(180deg, #ebfbff, #d8f7ff) !important;
+
+  color: #0a5b76 !important;
+
+  border-color: rgba(16,216,255,.35) !important;
+
+  font-weight: 700;
+
+}
+
+
+
+/* ===== TITULOS ===== */
+
+.sismo-shell main :is(h1, h2, h3, h4) {
+
+
+
+  letter-spacing: -.02em;
+
+}
+
+
+
+.sismo-shell main :is(p, small, span, label) {
+
+  color: inherit;
+
+}
+
+
+
+/* ===== LINKS ===== */
+
+.sismo-shell main a:not([class*="alert"]) {
+
+  color: #087da0;
+
+}
+
+
+
+/* ===== RESULTADOS ML ===== */
+
+.sismo-shell .gov-result-title > span {
+
+  color: #0b90b3 !important;
+
+  font-weight: 800;
+
+}
+
+
+
+.sismo-shell .gov-ml-v2-selected {
+
+  background: linear-gradient(180deg, #f5fdff, #ebfbff) !important;
+
+  border-color: rgba(16,216,255,.3) !important;
+
+}
+
+
+
+/* ===== ACCESIBILIDAD ===== */
+
+.sismo-shell :is(a, button):focus-visible {
+
+  outline: 2px solid rgba(16,216,255,.58) !important;
+
+  outline-offset: 3px;
+
+}
+
+
+
+/* ===== ALERTAS: no cambiar semantica ===== */

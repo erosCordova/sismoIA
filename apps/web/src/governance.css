@@ -1,591 +1,2133 @@
 .gov-panel{
+
+
   display:grid;
+
+
   gap:14px;
+
+
   min-width:0;
+
+
   margin:22px 0;
+
+
   padding:22px;
+
+
   background:white;
+
+
   color:#284d65;
+
+
   border:1px solid #d7e8ef;
+
+
   border-radius:14px
+
+
 }
+
+
 .gov-panel h2{font-size:20px;margin:0 0 5px}
+
+
 .gov-panel h3{font-size:15px;margin:8px 0 0}
+
+
 .gov-panel header p,
+
+
 .gov-foot,
+
+
 .gov-panel article p{
+
+
   color:#607d8e;
+
+
   font-size:12px;
+
+
   line-height:1.6
+
+
 }
+
+
 .gov-banner{
+
+
   background:#edf8fc;
+
+
   border-left:4px solid #138db4;
+
+
   padding:13px 15px;
+
+
   border-radius:7px;
+
+
   font-size:12px;
+
+
   line-height:1.6
+
+
 }
+
+
 .gov-error{
+
+
   background:#ffedf0;
+
+
   color:#9b253c;
+
+
   padding:11px;
+
+
   border-radius:8px
+
+
 }
+
+
 .gov-success{
+
+
   background:#ecf8f4;
+
+
   color:#177451;
+
+
   padding:11px;
+
+
   border-radius:8px
+
+
 }
+
+
 .gov-form{
+
+
   display:grid;
+
+
   grid-template-columns:repeat(3,minmax(0,1fr));
+
+
   gap:12px;
+
+
   align-items:end
+
+
 }
+
+
 .gov-form label,
+
+
 .gov-motivo{
+
+
   display:grid;
+
+
   gap:6px;
+
+
   font-size:12px;
+
+
   font-weight:700;
+
+
   color:#547386
+
+
 }
+
+
 .gov-form input:not([type=checkbox]),
+
+
 .gov-form select,
+
+
 .gov-motivo input{
+
+
   width:100%;
+
+
   min-width:0;
+
+
   padding:10px;
+
+
   border:1px solid #cbdfe8;
+
+
   border-radius:8px;
+
+
   background:white;
+
+
   color:#22465c
+
+
 }
+
+
 .gov-check{
+
+
   display:flex!important;
+
+
   align-items:center;
+
+
   gap:9px!important;
+
+
   line-height:1.4
+
+
 }
+
+
 .gov-form button,
+
+
 .gov-buttons button{
+
+
   padding:11px 13px;
+
+
   border:0;
+
+
   border-radius:8px;
+
+
   background:#087fa9;
+
+
   color:white;
+
+
   font-weight:700;
+
+
   cursor:pointer
+
+
 }
+
+
 .gov-buttons{
+
+
   display:flex;
+
+
   gap:9px;
+
+
   flex-wrap:wrap
+
+
 }
+
+
 .gov-buttons button:last-child{
+
+
   background:#eaf1f5;
+
+
   color:#5b3b49
+
+
 }
+
+
 .gov-panel button:disabled{
+
+
   opacity:.55;
+
+
   cursor:not-allowed
+
+
 }
+
+
 .gov-items{display:grid;gap:11px}
+
+
 .gov-items article{
+
+
   min-width:0;
+
+
   padding:16px;
+
+
   border:1px solid #e1edf2;
+
+
   border-radius:10px
+
+
 }
+
+
 .gov-itemtop{
+
+
   display:flex;
+
+
   justify-content:space-between;
+
+
   gap:10px;
+
+
   flex-wrap:wrap
+
+
 }
+
+
 .gov-itemtop span{
+
+
   padding:4px 9px;
+
+
   background:#edf6fc;
+
+
   border-radius:8px;
+
+
   font-size:11px
+
+
 }
+
+
 .gov-items small{
+
+
   display:block;
+
+
   margin:7px 0;
+
+
   color:#667d8d;
+
+
   font-size:10px;
+
+
   overflow-wrap:anywhere
+
+
 }
+
+
 .gov-tablewrap{overflow:auto}
+
+
 .gov-tablewrap table{
+
+
   width:100%;
+
+
   min-width:600px;
+
+
   border-collapse:collapse;
+
+
   text-align:left;
+
+
   font-size:12px
+
+
 }
+
+
 .gov-tablewrap th,
+
+
 .gov-tablewrap td{
+
+
   padding:9px;
+
+
   border-bottom:1px solid #e1eaf0
+
+
 }
+
+
 .gov-tablewrap th{background:#eaf6fa}
+
+
 @media(max-width:850px){
+
+
   .gov-form{
+
+
     grid-template-columns:repeat(2,minmax(0,1fr))
+
+
   }
+
+
 }
+
+
 @media(max-width:540px){
+
+
   .gov-panel{padding:13px}
+
+
   .gov-form{grid-template-columns:1fr}
+
+
 }
+
+
+
+
+
+
 
 
 /* SISMOIA UX GUIADA V1 */
 
+
+
+
+
 .gov-hero {
+
+
   padding: 26px;
+
+
   border-radius: 20px;
+
+
   background: linear-gradient(
+
+
     120deg, #e7f6ff, #eff5ff 52%, #f3edff
+
+
   );
+
+
   border: 1px solid #cee5f6;
+
+
   margin-bottom: 20px;
+
+
 }
+
+
+
+
 
 .gov-eyebrow {
+
+
   display: inline-block;
+
+
   color: #27649a;
+
+
   font-size: 11px;
+
+
   font-weight: 800;
+
+
   letter-spacing: .09em;
+
+
   margin-bottom: 10px;
+
+
 }
+
+
+
+
 
 .gov-hero h2 {
+
+
   font-size: clamp(21px, 2.7vw, 29px);
+
+
   color: #173c61;
+
+
   margin: 0 0 9px;
+
+
 }
+
+
+
+
 
 .gov-hero p {
+
+
   color: #526981;
+
+
   max-width: 750px;
+
+
   line-height: 1.65;
+
+
 }
+
+
+
+
 
 .gov-steps {
+
+
   display: grid;
+
+
   grid-template-columns: repeat(3, minmax(0, 1fr));
+
+
   gap: 12px;
+
+
   padding: 0;
+
+
   margin: 22px 0;
+
+
   list-style: none;
+
+
 }
+
+
+
+
 
 .gov-steps li {
+
+
   display: flex;
+
+
   align-items: center;
+
+
   gap: 11px;
+
+
   background: #fff;
+
+
   border: 1px solid #d9e6ef;
+
+
   border-radius: 13px;
+
+
   padding: 14px;
+
+
 }
+
+
+
+
 
 .gov-steps li.gov-active {
+
+
   border-color: #248dbb;
+
+
   box-shadow: 0 0 0 2px #248dbb20;
+
+
 }
+
+
+
+
 
 .gov-step-number {
+
+
   display: grid;
+
+
   place-items: center;
+
+
   width: 32px;
+
+
   height: 32px;
+
+
   flex: 0 0 32px;
+
+
   border-radius: 10px;
+
+
   background: #e7f3ff;
+
+
   color: #17618e;
+
+
   font-weight: 800;
+
+
 }
+
+
+
+
 
 .gov-active .gov-step-number {
+
+
   background: #127dab;
+
+
   color: #fff;
+
+
 }
+
+
+
+
 
 .gov-completed .gov-step-number {
+
+
   background: #d8f5e6;
+
+
   color: #166b47;
+
+
 }
+
+
+
+
 
 .gov-steps strong,
+
+
 .gov-steps small {
+
+
   display: block;
+
+
 }
+
+
+
+
 
 .gov-steps strong {
+
+
   color: #24465e;
+
+
   font-size: 13px;
+
+
 }
+
+
+
+
 
 .gov-steps small {
+
+
   color: #61778b;
+
+
   font-size: 11px;
+
+
   margin-top: 3px;
+
+
 }
+
+
+
+
 
 .gov-navigation a {
+
+
   color: #086b9a;
+
+
   font-weight: 700;
+
+
   text-decoration: none;
+
+
 }
+
+
+
+
 
 .gov-navigation a:hover {
+
+
   text-decoration: underline;
+
+
 }
+
+
+
+
 
 .gov-instructions,
+
+
 .gov-interpretacion {
+
+
   padding: 15px 18px;
+
+
   background: #eff8ff;
+
+
   border-left: 4px solid #248dbb;
+
+
   border-radius: 10px;
+
+
   margin: 16px 0;
+
+
   color: #315574;
+
+
 }
+
+
+
+
 
 .gov-instructions p,
+
+
 .gov-interpretacion p {
+
+
   margin: 6px 0 0;
+
+
   line-height: 1.6;
+
+
   font-size: 13px;
+
+
 }
+
+
+
+
 
 .gov-help {
+
+
   display: block;
+
+
   color: #627c90;
+
+
   font-size: 12px;
+
+
   line-height: 1.5;
+
+
   font-weight: 400;
+
+
   margin: 3px 0 7px;
+
+
 }
+
+
+
+
 
 .gov-estado {
+
+
   font-weight: 700;
+
+
   font-size: 12px;
+
+
   border-radius: 20px;
+
+
   padding: 5px 10px;
+
+
 }
+
+
+
+
 
 .gov-itemtop .gov-estado-pending {
+
+
   background: #fff3d6;
+
+
   color: #865b09;
+
+
 }
+
+
+
+
 
 .gov-itemtop .gov-estado-approved {
+
+
   background: #dcf7e9;
+
+
   color: #17643c;
+
+
 }
+
+
+
+
 
 .gov-itemtop .gov-estado-rejected {
+
+
   background: #ffe6e6;
+
+
   color: #9b2e36;
+
+
 }
+
+
+
+
 
 .gov-form button {
+
+
   transition: transform .15s, box-shadow .15s;
+
+
 }
+
+
+
+
 
 .gov-form button:not(:disabled):hover {
+
+
   transform: translateY(-1px);
+
+
   box-shadow: 0 5px 15px #167ca32b;
+
+
 }
+
+
+
+
 
 @media(max-width: 760px) {
+
+
   .gov-steps {
+
+
     grid-template-columns: 1fr;
+
+
   }
 
+
+
+
+
   .gov-hero {
+
+
     padding: 18px;
+
+
   }
+
+
 }
+
+
+
+
 
 /* SISMOIA - RESULTADOS GUIADOS */
 
+
+
+
+
 .gov-result-card {
+
+
   margin: 22px 0;
+
+
   padding: 22px;
+
+
   border: 1px solid #d9e8f3;
+
+
   border-radius: 18px;
+
+
   background: linear-gradient(135deg, #f5fbff, #f8f7ff);
+
+
 }
+
+
+
+
 
 .gov-result-title span {
+
+
   color: #2777a5;
+
+
   font-size: 11px;
+
+
   font-weight: 800;
+
+
   letter-spacing: .08em;
+
+
 }
+
+
+
+
 
 .gov-result-title h4 {
+
+
   margin: 8px 0;
+
+
   color: #173d62;
+
+
   font-size: 20px;
+
+
 }
+
+
+
+
 
 .gov-result-title p {
+
+
   color: #61778a;
+
+
   margin-bottom: 18px;
+
+
 }
+
+
+
+
 
 .gov-metric-grid {
+
+
   display: grid;
+
+
   grid-template-columns: repeat(3, minmax(0, 1fr));
+
+
   gap: 12px;
+
+
 }
+
+
+
+
 
 .gov-metric-grid > div {
+
+
   background: white;
+
+
   border: 1px solid #dfeaf2;
+
+
   border-radius: 14px;
+
+
   padding: 16px;
+
+
   min-width: 0;
+
+
 }
+
+
+
+
 
 .gov-metric-grid span,
+
+
 .gov-metric-grid strong,
+
+
 .gov-metric-grid small {
+
+
   display: block;
+
+
 }
+
+
+
+
 
 .gov-metric-grid span {
+
+
   color: #536b80;
+
+
   font-size: 12px;
+
+
   font-weight: 600;
+
+
 }
+
+
+
+
 
 .gov-metric-grid strong {
+
+
   color: #126f9c;
+
+
   font-size: 27px;
+
+
   margin: 9px 0;
+
+
   font-variant-numeric: tabular-nums;
+
+
 }
+
+
+
+
 
 .gov-metric-grid small {
+
+
   color: #6c8291;
+
+
   font-size: 11px;
+
+
   line-height: 1.5;
+
+
 }
+
+
+
+
 
 .gov-result-advice {
+
+
   margin-top: 15px;
+
+
   background: #fff8e9;
+
+
   border: 1px solid #f2deb1;
+
+
   border-radius: 12px;
+
+
   padding: 15px;
+
+
 }
+
+
+
+
 
 .gov-result-advice strong {
+
+
   color: #775011;
+
+
 }
+
+
+
+
 
 .gov-result-advice p {
+
+
   color: #695934;
+
+
   line-height: 1.6;
+
+
   margin: 7px 0 0;
+
+
 }
+
+
+
+
 
 @media (max-width: 760px) {
+
+
   .gov-metric-grid {
+
+
     grid-template-columns: 1fr;
+
+
   }
 
+
+
+
+
   .gov-result-card {
+
+
     padding: 15px;
+
+
   }
+
+
 }
+
+
+
+
+
+
 
 
 /* SISMOIA - PRUEBA INTERACTIVA ML */
 
+
+
+
+
 .gov-try {
+
+
   margin: 20px 0;
+
+
   border: 1px solid #c9e2f3;
+
+
   border-radius: 15px;
+
+
   overflow: hidden;
+
+
   background: #f4faff;
+
+
 }
+
+
+
+
 
 .gov-try summary {
+
+
   padding: 17px;
+
+
   cursor: pointer;
+
+
   font-weight: 800;
+
+
   color: #176b9c;
+
+
   background: #e8f5ff;
+
+
 }
+
+
+
+
 
 .gov-try-body {
+
+
   padding: 20px;
+
+
 }
+
+
+
+
 
 .gov-try-body h4 {
+
+
   margin: 0 0 8px;
+
+
   color: #19496b;
+
+
 }
+
+
+
+
 
 .gov-try-body p {
+
+
   line-height: 1.6;
+
+
 }
+
+
+
+
 
 .gov-try-fields {
+
+
   display: grid;
+
+
   grid-template-columns: repeat(
+
+
     auto-fit, minmax(170px, 1fr)
+
+
   );
+
+
   gap: 14px;
+
+
   margin: 18px 0;
+
+
 }
+
+
+
+
 
 .gov-try-fields label {
+
+
   display: flex;
+
+
   flex-direction: column;
+
+
   gap: 7px;
+
+
   color: #274c67;
+
+
 }
+
+
+
+
 
 .gov-try-fields small {
+
+
   color: #688196;
+
+
   line-height: 1.4;
+
+
 }
+
+
+
+
 
 .gov-try-fields input {
+
+
   width: 100%;
+
+
   min-width: 0;
+
+
   box-sizing: border-box;
+
+
   padding: 12px;
+
+
   border-radius: 10px;
+
+
   border: 1px solid #bad5e5;
+
+
   background: #fff;
+
+
   color: #1c3e57;
+
+
   font-size: 15px;
+
+
 }
+
+
+
+
 
 .gov-try-body button {
+
+
   border: 0;
+
+
   border-radius: 10px;
+
+
   padding: 12px 20px;
+
+
   background: #157eac;
+
+
   color: #fff;
+
+
   font-weight: 800;
+
+
   cursor: pointer;
+
+
 }
+
+
+
+
 
 .gov-try-body button:disabled {
+
+
   opacity: .55;
+
+
   cursor: not-allowed;
+
+
 }
+
+
+
+
 
 .gov-try-warning {
+
+
   background: #fff4d9;
+
+
   border: 1px solid #eed69a;
+
+
   border-radius: 10px;
+
+
   padding: 12px;
+
+
   color: #795412;
+
+
 }
+
+
+
+
 
 .gov-try-result {
+
+
   margin-top: 20px;
+
+
   padding: 20px;
+
+
   background: #e7f8ee;
+
+
   border: 1px solid #b3dfc5;
+
+
   border-radius: 14px;
+
+
 }
+
+
+
+
 
 .gov-try-result span,
+
+
 .gov-try-result strong {
+
+
   display: block;
+
+
 }
+
+
+
+
 
 .gov-try-result span {
+
+
   font-size: 11px;
+
+
   font-weight: 800;
+
+
   color: #286c49;
+
+
   letter-spacing: .08em;
+
+
 }
+
+
+
+
 
 .gov-try-result strong {
+
+
   font-size: 25px;
+
+
   color: #145b38;
+
+
   margin: 9px 0;
+
+
   overflow-wrap: anywhere;
+
+
 }
 
+
+
+
+
 .gov-try-result p {
+
+
   color: #315d44;
+
+
 }
+
+
+
+
+
+
 
 
 /* SISMOIA ML V2: informacion visible tambien en modo compacto */
+
+
 .gov-ml-v2-details {
+
+
   display: grid;
+
+
   gap: 12px;
+
+
   margin: 14px 0;
+
+
   padding: 16px;
+
+
   border: 1px solid #cbdde9;
+
+
   border-radius: 14px;
+
+
   background: rgba(49, 130, 206, 0.045);
+
+
 }
+
+
+
+
 
 .gov-ml-v2-details p {
+
+
   margin: 0;
+
+
   line-height: 1.5;
+
+
 }
+
+
+
+
 
 .gov-ml-v2-scores {
+
+
   display: grid;
+
+
   grid-template-columns: repeat(
+
+
     auto-fit, minmax(min(100%, 185px), 1fr)
+
+
   );
+
+
   gap: 9px;
+
+
   margin-top: 10px;
+
+
 }
+
+
+
+
 
 .gov-ml-v2-score {
+
+
   display: flex;
+
+
   flex-direction: column;
+
+
   gap: 5px;
+
+
   padding: 11px 13px;
+
+
   border: 1px solid #d5e0eb;
+
+
   border-radius: 10px;
+
+
   background: #fff;
+
+
   color: #243747;
+
+
 }
+
+
+
+
 
 .gov-ml-v2-score span {
+
+
   font-size: 0.82rem;
+
+
   overflow-wrap: anywhere;
+
+
 }
+
+
+
+
 
 .gov-ml-v2-score strong {
+
+
   font-size: 1.06rem;
+
+
 }
+
+
+
+
 
 .gov-ml-v2-selected {
+
+
   border-color: #239b83;
+
+
   background: #edf9f5;
+
+
 }
+
+
+
+
 
 .gov-ml-v2-warning {
+
+
   font-size: 0.84rem;
+
+
   color: #80591a;
+
+
 }
 
+
+
+
+
 .gov-ml-v2-caption {
+
+
   font-size: 0.8rem;
+
+
   opacity: 0.78;
+
+
+}
+
+
+
+
+
+/* SISMOIA_ML_RESULTS_VISUAL_V2 */
+
+
+
+/* Aplicar exclusivamente al historial de experimentos ML. */
+
+
+
+.sismo-shell .gov-panel
+
+.gov-items:has(> article .gov-result-card) {
+
+  display: grid;
+
+  grid-template-columns: minmax(0, 1fr);
+
+  gap: 16px;
+
+}
+
+
+
+/* Ocultar los bloques explicativos y textos repetidos. */
+
+
+
+.sismo-shell .gov-panel
+
+.gov-items:has(> article .gov-result-card)
+
+.gov-interpretacion,
+
+
+
+.sismo-shell .gov-panel
+
+.gov-items:has(> article .gov-result-card)
+
+.gov-result-advice,
+
+
+
+.sismo-shell .gov-panel
+
+.gov-items:has(> article .gov-result-card)
+
+.gov-result-title,
+
+
+
+.sismo-shell .gov-panel
+
+.gov-items:has(> article .gov-result-card)
+
+.gov-metric-grid small {
+
+  display: none !important;
+
+}
+
+
+
+/* Tarjeta principal de cada entrenamiento. */
+
+
+
+.sismo-shell .gov-panel
+
+.gov-items:has(> article .gov-result-card) > article {
+
+  min-width: 0;
+
+  background: #ffffff !important;
+
+  border: 1px solid #dce8ef !important;
+
+  border-radius: 16px !important;
+
+  padding: 20px !important;
+
+  box-shadow: 0 6px 20px rgba(9, 47, 76, .06);
+
+}
+
+
+
+.sismo-shell .gov-panel
+
+.gov-items:has(> article .gov-result-card)
+
+.gov-itemtop {
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 12px;
+
+  flex-wrap: wrap;
+
+  padding-bottom: 12px;
+
+  border-bottom: 1px solid #e8eff4;
+
+}
+
+
+
+.sismo-shell .gov-panel
+
+.gov-items:has(> article .gov-result-card)
+
+.gov-itemtop > strong {
+
+  color: #173c56 !important;
+
+  font-size: 16px;
+
+  font-weight: 800;
+
+}
+
+
+
+.sismo-shell .gov-panel
+
+.gov-items:has(> article .gov-result-card)
+
+.gov-result-card {
+
+  margin: 12px 0 !important;
+
+  padding: 0 !important;
+
+  background: transparent !important;
+
+  border: none !important;
+
+  box-shadow: none !important;
+
+}
+
+
+
+/* Tres tarjetas de métricas, cada una con color diferente. */
+
+
+
+.sismo-shell .gov-panel
+
+.gov-items:has(> article .gov-result-card)
+
+.gov-metric-grid {
+
+  display: grid;
+
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+
+  gap: 12px;
+
+  margin: 14px 0;
+
+}
+
+
+
+.sismo-shell .gov-panel
+
+.gov-items:has(> article .gov-result-card)
+
+.gov-metric-grid > div {
+
+  min-width: 0;
+
+  border-radius: 14px !important;
+
+  padding: 18px !important;
+
+  background: linear-gradient(
+
+    130deg, #06334e, #075a79
+
+  ) !important;
+
+  border: 1px solid #087da4 !important;
+
+}
+
+
+
+.sismo-shell .gov-panel
+
+.gov-items:has(> article .gov-result-card)
+
+.gov-metric-grid > div:nth-child(3n+2) {
+
+  background: linear-gradient(
+
+    130deg, #006170, #069fba
+
+  ) !important;
+
+  border-color: #04a8ca !important;
+
+}
+
+
+
+.sismo-shell .gov-panel
+
+.gov-items:has(> article .gov-result-card)
+
+.gov-metric-grid > div:nth-child(3n+3) {
+
+  background: linear-gradient(
+
+    130deg, #00645e, #05947c
+
+  ) !important;
+
+  border-color: #02aa95 !important;
+
+}
+
+
+
+.sismo-shell .gov-panel
+
+.gov-items:has(> article .gov-result-card)
+
+.gov-metric-grid span {
+
+  display: block;
+
+  color: #e8faff !important;
+
+  font-size: 12px !important;
+
+  font-weight: 650;
+
+}
+
+
+
+.sismo-shell .gov-panel
+
+.gov-items:has(> article .gov-result-card)
+
+.gov-metric-grid strong {
+
+  display: block;
+
+  color: #ffffff !important;
+
+  font-size: 27px !important;
+
+  font-weight: 800;
+
+  margin: 10px 0 0;
+
+  font-variant-numeric: tabular-nums;
+
+}
+
+
+
+@media (max-width: 700px) {
+
+  .sismo-shell .gov-panel
+
+  .gov-items:has(> article .gov-result-card)
+
+  .gov-metric-grid {
+
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  }
+
+}
+
+
+
+@media (max-width: 460px) {
+
+  .sismo-shell .gov-panel
+
+  .gov-items:has(> article .gov-result-card)
+
+  .gov-metric-grid {
+
+    grid-template-columns: minmax(0, 1fr);
+
+  }
+
+}
+
+
+/* SISMOIA_ML_COMPACT_V4 */
+
+/* Solo historial de experimentos ML. */
+.sismo-shell .gov-panel .gov-items:has(> article .gov-result-card) > article {
+  padding: 15px !important;
+  border-radius: 15px !important;
+}
+
+.sismo-shell .gov-panel .gov-items:has(> article .gov-result-card) > article > p,
+.sismo-shell .gov-panel .gov-items:has(> article .gov-result-card) > article .gov-interpretacion,
+.sismo-shell .gov-panel .gov-items:has(> article .gov-result-card) > article .gov-result-advice,
+.sismo-shell .gov-panel .gov-items:has(> article .gov-result-card) > article .gov-result-title,
+.sismo-shell .gov-panel .gov-items:has(> article .gov-result-card) > article .gov-metric-grid small,
+.sismo-shell .gov-panel .gov-items:has(> article .gov-result-card) > article .gov-result-card ~ p {
+  display: none !important;
+}
+
+.sismo-shell .gov-panel .gov-items:has(> article .gov-result-card) > article .gov-result-card {
+  padding: 0 !important;
+  margin: 10px 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.sismo-shell .gov-panel .gov-items:has(> article .gov-result-card) > article .gov-metric-grid {
+  margin: 10px 0 !important;
+  gap: 10px !important;
+}
+
+.sismo-shell .gov-panel .gov-items:has(> article .gov-result-card) > article .gov-metric-grid > div {
+  padding: 14px !important;
+  min-height: 0 !important;
+}
+
+.sismo-shell .gov-panel .gov-items:has(> article .gov-result-card) > article .gov-metric-grid strong {
+  margin: 7px 0 0 !important;
+}
+
+.sismo-shell .gov-panel .gov-items:has(> article .gov-result-card) > article .gov-try {
+  margin: 10px 0 !important;
+}
+
+.sismo-shell .gov-panel .gov-items:has(> article .gov-result-card) > article .gov-try > summary {
+  padding: 11px 13px !important;
+  font-size: 13px !important;
+}
+
+
+.sismo-shell .gov-panel .gov-items:has(> article .gov-result-card) .gov-ml-v2-details {
+  padding: 10px 12px !important;
+  margin: 8px 0 !important;
+  min-height: 0 !important;
+}
+
+.sismo-shell .gov-panel .gov-items:has(> article .gov-result-card) .gov-ml-v2-details > :not(:first-child) {
+  display: none !important;
 }

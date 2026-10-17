@@ -1,0 +1,132 @@
+
+.sismo-experiment-delete {
+  margin: 15px 0 20px;
+  border: 1px solid #d8e6ee;
+  border-radius: 14px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.sismo-experiment-delete > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 17px;
+  color: #153f59;
+  font-weight: 750;
+  cursor: pointer;
+  background: #f4fafe;
+}
+
+.sismo-experiment-delete > summary span {
+  color: #56798e;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sismo-experiment-delete-body {
+  padding: 17px;
+}
+
+.sismo-experiment-delete-body > p {
+  color: #597487;
+  font-size: 12px;
+}
+
+.sismo-experiment-protected {
+  padding: 10px;
+  background: #f2f7fa;
+  border-radius: 9px;
+}
+
+.sismo-experiment-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 0;
+}
+
+.sismo-experiment-actions label,
+.sismo-experiment-delete-row label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #173c55;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.sismo-experiment-delete input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #068ba9;
+  flex: none;
+}
+
+.sismo-experiment-delete-list {
+  max-height: 340px;
+  overflow-y: auto;
+  border-top: 1px solid #e5edf3;
+}
+
+.sismo-experiment-delete-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 3px;
+  border-bottom: 1px solid #e5edf3;
+}
+
+.sismo-experiment-delete-row label span {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sismo-experiment-delete-row strong {
+  color: #153d58 !important;
+  font-size: 12px;
+}
+
+.sismo-experiment-delete-row small {
+  color: #678196 !important;
+  font-size: 11px;
+}
+
+.sismo-shell .sismo-delete-danger {
+  background: #fff0f0 !important;
+  color: #a52633 !important;
+  border: 1px solid #e8b4b9 !important;
+  padding: 9px 12px;
+  border-radius: 9px;
+  font-weight: 750;
+  font-size: 12px;
+  cursor: pointer;
+  box-shadow: none !important;
+}
+
+.sismo-shell .sismo-delete-danger:hover:not(:disabled) {
+  background: #ffe0e1 !important;
+}
+
+.sismo-shell .sismo-delete-danger:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.sismo-delete-error {
+  color: #a52633 !important;
+  padding: 10px;
+  background: #fff0f0;
+  border-radius: 9px;
+}
+
+@media (max-width: 650px) {
+  .sismo-experiment-delete-row {
+    flex-wrap: wrap;
+  }
+}
