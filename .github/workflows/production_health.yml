@@ -1,0 +1,28 @@
+name: SISMOIA - Supervisar produccion
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 13 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sismoia-production-monitor
+  cancel-in-progress: false
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Verificar Vercel Render y seguridad
+        run: python services/api/scripts/verify_production.py
