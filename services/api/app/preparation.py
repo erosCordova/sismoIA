@@ -8,7 +8,8 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from app.auth import usuario_actual
+from app.access import requerir_permiso
+from app.time_utils import next_utc_date
 from app.database import engine
 from app.models import DataSource, SeismicEvent
 
@@ -79,7 +80,7 @@ def filtros(fuente, peru):
 def perfil(
     fuente: str | None = Query(None, pattern="^(USGS|IGP)$"),
     peru: bool = False,
-    usuario: dict = Depends(usuario_actual)
+    usuario: dict = Depends(requerir_permiso("datasets:read"))
 ):
     filas = preparar(fuente, peru, MAX_FILAS + 1)
     limitado = len(filas) > MAX_FILAS
@@ -129,7 +130,7 @@ def vista_previa(
     peru: bool = False,
     solo_validos: bool = False,
     limite: int = Query(50, ge=1, le=200),
-    usuario: dict = Depends(usuario_actual)
+    usuario: dict = Depends(requerir_permiso("datasets:read"))
 ):
     filas = preparar(fuente, peru)
     if solo_validos:
@@ -141,7 +142,7 @@ def exportar(
     fuente: str | None = Query(None, pattern="^(USGS|IGP)$"),
     peru: bool = False,
     solo_validos: bool = False,
-    usuario: dict = Depends(usuario_actual)
+    usuario: dict = Depends(requerir_permiso("datasets:write"))
 ):
     filas = preparar(fuente, peru)
     if solo_validos:
@@ -202,7 +203,7 @@ def condiciones_dataset(
     if fecha_hasta:
         condiciones.append(
             SeismicEvent.occurred_at < datetime.combine(
-                fecha_hasta + timedelta(days=1),
+                next_utc_date(fecha_hasta),
                 time.min, tzinfo=timezone.utc
             )
         )
@@ -397,7 +398,7 @@ def reporte_dataset(
         "magnitud",
         pattern="^(magnitud|profundidad_km)$"
     ),
-    usuario: dict = Depends(usuario_actual),
+    usuario: dict = Depends(requerir_permiso("datasets:read")),
 ):
     version = version_consulta(
         fuente, peru, fecha_desde, fecha_hasta
@@ -552,7 +553,7 @@ def exportar_dataset(
         "magnitud",
         pattern="^(magnitud|profundidad_km)$"
     ),
-    usuario: dict = Depends(usuario_actual),
+    usuario: dict = Depends(requerir_permiso("datasets:write")),
 ):
     datos = registros_preparados(
         fuente, peru, fecha_desde, fecha_hasta,

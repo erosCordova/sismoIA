@@ -25,6 +25,7 @@ import {
 } from "./AuthGate";
 
 import "./science-panels.css";
+import {ClassificationReading, RegressionResultsReading} from "./ModelResultReading";
 
 type Analisis = {
   muestra: number;
@@ -746,7 +747,7 @@ function CalidadPanel({
   );
 }
 
-function ModelosPanel() {
+function ModelosPanel({peru}: {peru: boolean}) {
   const token = useContext(TokenContext);
   const usuario = useContext(UsuarioContext);
 
@@ -772,7 +773,7 @@ function ModelosPanel() {
 
     try {
       const resultado = await obtener<Experimento>(
-        "/api/v1/science/ml/compare",
+        `/api/v1/science/ml/compare?peru=${peru}`,
         token,
         "POST"
       );
@@ -793,6 +794,7 @@ function ModelosPanel() {
           Regresión lineal simple y múltiple,
           clasificación y validación cronológica.
         </p>
+        <p>La regresión simple estudia cómo se relaciona la profundidad con la magnitud registrada. La múltiple añade latitud y longitud. Ambas intentan estimar la magnitud de eventos del catálogo a partir de esos datos; la comparación permite ver si añadir variables reduce el error.</p>
       </header>
 
       <div className="science-actions">
@@ -883,6 +885,8 @@ function ModelosPanel() {
             </table>
           </div>
 
+          <RegressionResultsReading comparison={datos.regresion} target="magnitud"/>
+
           <h3>Magnitud real vs. estimada</h3>
 
           <p className="science-note">
@@ -966,6 +970,9 @@ function ModelosPanel() {
                 Orden: 0 (M menor que 4),
                 1 (M igual o mayor que 4).
               </p>
+              {datos.clasificacion.comparacion.filter(c => !/referencia|baseline/i.test(c.modelo)).map(c =>
+                <ClassificationReading key={c.modelo} metric={c}/>
+              )}
             </>
           ) : (
             <p className="science-note">
@@ -1000,5 +1007,5 @@ export default function SciencePanels({
     return <CalidadPanel peru={peru} />;
   }
 
-  return <ModelosPanel />;
+  return <ModelosPanel key={peru ? "peru" : "mundo"} peru={peru} />;
 }

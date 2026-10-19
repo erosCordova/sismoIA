@@ -6,6 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from app.auth import usuario_actual
+from app.time_utils import utc_iso
+from app.ingestion import tracked_ingestion, store_events, origin_hash
 from app.database import engine
 from app.models import DataSource, SeismicEvent
 
@@ -17,7 +19,7 @@ def zona_peru(consulta):
 
 def serializar(e, origen="Desconocida"):
     return {"id": str(e.id), "fuente": origen, "external_id": e.external_id,
-            "fecha_utc": e.occurred_at.isoformat() + "Z",
+            "fecha_utc": utc_iso(e.occurred_at),
             "latitud": float(e.latitude), "longitud": float(e.longitude),
             "magnitud": float(e.magnitude),
             "profundidad_km": float(e.depth_km) if e.depth_km is not None else None,
@@ -25,6 +27,7 @@ def serializar(e, origen="Desconocida"):
             "tipo_magnitud": e.magnitude_type, "estado": e.review_status}
 
 @router.post("/sync")
+@tracked_ingestion("USGS", "US Geological Survey", FEED_URL, "geojson")
 def sincronizar(usuario: dict = Depends(usuario_actual)):
     if "Administrador" not in usuario.get("roles", []):
         raise HTTPException(403, "Solo administradores pueden sincronizar fuentes")
@@ -37,7 +40,7 @@ def sincronizar(usuario: dict = Depends(usuario_actual)):
                 raise ValueError("Formato GeoJSON invalido")
     except (httpx.HTTPError, ValueError, KeyError) as error:
         raise HTTPException(502, f"No fue posible consultar USGS: {error}")
-    ahora = datetime.now(timezone.utc).replace(tzinfo=None)
+    ahora = datetime.now(timezone.utc)
     por_id = {str(f["id"]): f for f in registros if isinstance(f, dict) and f.get("id")}
     with Session(engine) as db:
         fuente = db.scalar(select(DataSource).where(DataSource.name == "USGS"))
@@ -48,13 +51,9 @@ def sincronizar(usuario: dict = Depends(usuario_actual)):
             db.add(fuente)
             db.flush()
         ids = list(por_id)
-        existentes = set(db.scalars(select(SeismicEvent.external_id).where(
-            SeismicEvent.source_id == fuente.id, SeismicEvent.external_id.in_(ids))).all()) if ids else set()
-        nuevos = 0
         descartados = 0
+        pendientes = []
         for identificador, evento in por_id.items():
-            if identificador in existentes:
-                continue
             propiedades = evento.get("properties") or {}
             coordenadas = (evento.get("geometry") or {}).get("coordinates") or []
             try:
@@ -69,24 +68,24 @@ def sincronizar(usuario: dict = Depends(usuario_actual)):
                 profundidad = float(coordenadas[2]) if len(coordenadas) > 2 and coordenadas[2] is not None else None
                 if profundidad is not None and not math.isfinite(profundidad):
                     profundidad = None
-                fecha = datetime.fromtimestamp(float(propiedades["time"]) / 1000, timezone.utc).replace(tzinfo=None)
+                fecha = datetime.fromtimestamp(float(propiedades["time"]) / 1000, timezone.utc)
             except (TypeError, ValueError, OverflowError):
                 descartados += 1
                 continue
-            db.add(SeismicEvent(source_id=fuente.id, external_id=identificador,
+            pendientes.append(dict(source_id=fuente.id, external_id=identificador,
                 occurred_at=fecha, latitude=Decimal(str(latitud)),
                 longitude=Decimal(str(longitud)), magnitude=Decimal(str(magnitud)),
                 depth_km=Decimal(str(profundidad)) if profundidad is not None else None,
                 magnitude_type=str(propiedades.get("magType") or "")[:30] or None,
                 place=propiedades.get("place"), source_url=propiedades.get("url"),
-                received_at=ahora, review_status=str(propiedades.get("status") or "automatic")[:30]))
-            nuevos += 1
+                received_at=ahora, review_status=str(propiedades.get("status") or "automatic")[:30], origin_hash=origin_hash(evento)))
+        cambios = store_events(db, fuente, pendientes)
         fuente.last_sync_at = ahora
         fuente.status = "active"
         db.commit()
     return {"fuente": "USGS", "recibidos": len(registros),
-            "importados": nuevos, "duplicados": len(existentes),
-            "descartados": descartados, "sincronizacion_utc": ahora.isoformat() + "Z"}
+            "importados": cambios["inserted"], "actualizados": cambios["updated"], "duplicados": cambios["unchanged"],
+            "descartados": descartados, "sincronizacion_utc": utc_iso(ahora)}
 
 @router.get("/events")
 def listar_eventos(
@@ -119,5 +118,5 @@ def estadisticas(usuario: dict = Depends(usuario_actual)):
         ultima = db.scalar(select(func.max(DataSource.last_sync_at)))
         return {"total_eventos": total, "eventos_peru": peru,
                 "magnitud_maxima": float(maxima) if maxima is not None else None,
-                "ultima_sincronizacion_utc": ultima.replace(tzinfo=timezone.utc).isoformat() if ultima else None,
+                "ultima_sincronizacion_utc": utc_iso(ultima),
                 "fuente": "USGS + IGP" if len(conteos) > 1 else next(iter(conteos), None), "eventos_por_fuente": conteos}

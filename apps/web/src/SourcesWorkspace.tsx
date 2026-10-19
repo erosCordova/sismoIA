@@ -11,6 +11,8 @@ import {
 import "./preparation.css";
 import "./reporting.css";
 import "./operations-enterprise.css";
+import {apiError} from "./apiErrors";
+import IngestionRunsPanel from "./IngestionRunsPanel";
 
 type Fuente = {
   id: string;
@@ -143,14 +145,15 @@ export default function SourcesWorkspace() {
 
       if (!r.ok) {
         throw Error(
-          `Sincronización no completada: HTTP ${r.status}`
+          await apiError(r, "No se pudo completar la sincronización")
         );
       }
 
-      setMensaje(
-        "La API finalizó la sincronización. " +
-        "Actualizando los indicadores..."
-      );
+      const result = await r.json();
+      const failed = Object.entries(result.fuentes as Record<string,{estado:string}>).filter(([,item]) => item.estado === "failed").map(([name]) => name);
+      setMensaje(result.estado === "partial"
+        ? `Sincronización parcial: ${failed.join(", ")} no respondió correctamente. Las demás fuentes sí se procesaron. Consulta el historial de ingesta.`
+        : "Sincronización completada. Actualizando los indicadores...");
 
       setRevision(v => v + 1);
     } catch (e) {
@@ -346,6 +349,7 @@ export default function SourcesWorkspace() {
           </p>
         </>
       )}
+      <IngestionRunsPanel revision={revision}/>
     </section>
   );
 }

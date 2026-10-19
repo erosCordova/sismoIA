@@ -33,6 +33,6 @@ jobs:
             exit 1
           fi
       - name: Instalar dependencias
-        run: python -m pip install -r services/api/requirements.txt
+        run: python -m pip install -r services/api/requirements.txt -c services/api/requirements.constraints.txt
       - name: Sincronizar USGS IGP y evaluar alertas
         run: python services/api/scripts/seismic_worker.py

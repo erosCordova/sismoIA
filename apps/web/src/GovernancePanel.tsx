@@ -26,6 +26,7 @@ import {Link} from "react-router-dom";
 
 
 import "./governance.css";
+import {ClassificationReading, RegressionReading} from "./ModelResultReading";
 
 
 
@@ -217,6 +218,8 @@ function etiquetaEstado(estado: string): string {
 
 
 type ResultadoEstimacion = {
+  probabilidad_clase_positiva?: number;
+  nota_probabilidad?: string;
 
 
   modelo: string;
@@ -796,6 +799,9 @@ function PruebaEstimacion({
 
 
           <div className="gov-try-result" role="status">
+            <p>{resultado.algoritmo === "regresion"
+              ? `Con los datos que ingresaste, el modelo estima ${resultado.objetivo === "profundidad_km" ? "una profundidad" : "una magnitud"} de ${resultado.estimacion.toLocaleString("es-PE", {maximumFractionDigits:3})}${resultado.objetivo === "profundidad_km" ? " km" : ""} para el registro analizado. Es una aproximación: consulta el error promedio del modelo para valorar cuánto puede diferir del dato real.`
+              : "Con los datos que ingresaste, el modelo asigna el registro a la categoría que aparece abajo. La probabilidad indica cómo lo clasifica el modelo; no es la probabilidad de que ocurra un terremoto."}</p>
 
 
             <span>RESULTADO DEL MODELO</span>
@@ -853,6 +859,12 @@ function PruebaEstimacion({
 
 
               {resultado.advertencia}
+              {typeof resultado.probabilidad_clase_positiva === "number" && (
+                <span style={{display: "block", marginTop: 8}}>
+                  Probabilidad de clase M ≥ 4: {(resultado.probabilidad_clase_positiva * 100).toFixed(1)} %.
+                  {" "}{resultado.nota_probabilidad}
+                </span>
+              )}
 
 
             </p>
@@ -1026,6 +1038,8 @@ export default function GovernancePanel({
 
 
 
+  const [fechaDesde, setFechaDesde] = useState("");
+  const [fechaHasta, setFechaHasta] = useState("");
   const [motivo, setMotivo] = useState(
 
 
@@ -1687,6 +1701,10 @@ export default function GovernancePanel({
 
 
           <h3>Nuevo dataset</h3>
+          <div className="sismo-filter-bar">
+            <label>Periodo desde (UTC)<input type="date" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)}/></label>
+            <label>Periodo hasta (UTC)<input type="date" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)}/></label>
+          </div>
 
 
 
@@ -2044,6 +2062,8 @@ export default function GovernancePanel({
 
 
                     nombre: nombre.trim(),
+                    fecha_desde: fechaDesde || null,
+                    fecha_hasta: fechaHasta || null,
 
 
                     fuente: fuente || null,
@@ -2798,97 +2818,7 @@ export default function GovernancePanel({
 
 
 
-                <div className="gov-interpretacion">
 
-
-                  {e.algoritmo === "regresion" ? (
-
-
-                    <>
-
-
-                      <strong>¿Cómo interpretar esta evaluación?</strong>
-
-
-                      <p>
-
-
-                        MAE indica cuánto se equivoca el modelo
-
-
-                        en promedio. RMSE penaliza más los
-
-
-                        errores grandes. R² muestra cuánto
-
-
-                        mejora el ajuste respecto a utilizar
-
-
-                        una referencia constante.
-
-
-                      </p>
-
-
-                      <p>
-
-
-                        Busca errores pequeños y compara
-
-
-                        siempre el modelo con la referencia.
-
-
-                        Un R² cercano a cero indica escasa
-
-
-                        capacidad explicativa.
-
-
-                      </p>
-
-
-                    </>
-
-
-                  ) : (
-
-
-                    <>
-
-
-                      <strong>¿Cómo interpretar esta clasificación?</strong>
-
-
-                      <p>
-
-
-                        Precisión indica qué proporción de
-
-
-                        las predicciones positivas fue correcta.
-
-
-                        Recall indica cuántos positivos reales
-
-
-                        identificó el modelo. F1 resume
-
-
-                        ambas métricas.
-
-
-                      </p>
-
-
-                    </>
-
-
-                  )}
-
-
-                </div>
 
 
 
@@ -3152,43 +3082,11 @@ export default function GovernancePanel({
 
 
 
-                        <div className="gov-result-advice">
+                        {e.algoritmo === "regresion"
+                          ? <RegressionReading metric={m} comparison={e.resultados.comparacion} target={e.resultados.objetivo}/>
+                          : <ClassificationReading metric={m}/>}
 
 
-                          <strong>
-
-
-                            ¿Qué significa este resultado?
-
-
-                          </strong>
-
-
-
-
-
-                          <p>
-
-
-                            {e.algoritmo === "regresion"
-
-
-                              ? m.r2 != null && m.r2 <= 0.1
-
-
-                                ? "El modelo tiene un ajuste muy bajo. Conviene revisar las variables y compararlo con una referencia antes de aprobarlo."
-
-
-                                : "Revisa los errores y compáralos con una referencia sencilla. Un entrenamiento exitoso no garantiza buenas estimaciones."
-
-
-                              : "Compara precisión, recall, F1 y la matriz de confusión. Ninguna métrica aislada demuestra que el modelo sea adecuado."}
-
-
-                          </p>
-
-
-                        </div>
 
 
                       </>

@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.access import requerir_permiso
+from app.time_utils import next_utc_date
 from app.database import engine
 from app.models import SeismicEvent, DataSource
 
@@ -35,7 +36,7 @@ def consultar(
             422, "La fecha inicial supera la final"
         )
 
-    condiciones = []
+    condiciones = [SeismicEvent.occurred_at <= datetime.now(timezone.utc)]
 
     if peru:
         condiciones += [
@@ -56,7 +57,7 @@ def consultar(
     if hasta:
         condiciones.append(
             SeismicEvent.occurred_at < datetime.combine(
-                hasta + timedelta(days=1),
+                next_utc_date(hasta),
                 time.min, tzinfo=timezone.utc
             )
         )
@@ -248,6 +249,8 @@ def explorar(
 
 @router.post("/ml/compare")
 def comparar_ml(
+    peru: bool = False,
+    fuente: Literal["IGP", "USGS"] | None = None,
     usuario=Depends(
         requerir_permiso("models:train")
     )
@@ -269,7 +272,7 @@ def comparar_ml(
     from sklearn.pipeline import make_pipeline
     from sklearn.preprocessing import StandardScaler
 
-    filas = consultar(limite=3001)
+    filas = consultar(peru=peru, fuente=fuente, limite=3001)
     limitado = len(filas) > 3000
     filas = filas[:3000]
 
@@ -315,12 +318,12 @@ def comparar_ml(
         for e, _ in validas
     ], dtype=float)
 
-    corte = max(
-        1, min(
-            len(validas)-1,
-            int(len(validas)*0.8)
-        )
-    )
+    from app.ml_data import temporal_split
+    train, _ = temporal_split([
+        {"id": str(event.id), "fecha_utc": utc(event.occurred_at).isoformat()}
+        for event, _source in validas
+    ], min_train=30, min_test=8)
+    corte = len(train)
 
     X_train = X[:corte]
     X_test = X[corte:]
@@ -366,7 +369,7 @@ def comparar_ml(
 
         regresiones.append({
             "modelo": nombre,
-            "variables": [
+            "variables": [] if nombre == "Referencia: media histórica" else [
                 variables[i] for i in indices
             ],
             "mae": round(
@@ -502,6 +505,7 @@ def comparar_ml(
             "EV-" + huella[:14].upper()
         ),
         "guardado": False,
+        "filtros": {"peru": peru, "fuente": fuente},
         "muestra_limitada": limitado,
         "entrenamiento": corte,
         "validacion": len(validas) - corte,

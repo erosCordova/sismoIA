@@ -11,6 +11,7 @@ class AlertRule(AlertBase):
     name = mapped_column(String(120), nullable=False, unique=True)
     min_magnitude = mapped_column(Numeric(5, 2), nullable=False)
     max_depth_km = mapped_column(Numeric(9, 3), nullable=True)
+    allowed_source = mapped_column(String(20), nullable=True)
     peru_only = mapped_column(Boolean, default=False, nullable=False)
     enabled = mapped_column(Boolean, default=True, nullable=False)
     created_by = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)

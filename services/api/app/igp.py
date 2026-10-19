@@ -8,11 +8,13 @@ from sqlalchemy.orm import Session
 from app.auth import usuario_actual
 from app.database import engine
 from app.models import DataSource, SeismicEvent
+from app.ingestion import tracked_ingestion, store_events, origin_hash
 
 router = APIRouter(prefix="/api/v1/seismic", tags=["IGP"])
 IGP_URL = "https://ide.igp.gob.pe/arcgis/rest/services/monitoreocensis/SismosReportados/MapServer/0"
 
 @router.post("/sync-igp")
+@tracked_ingestion("IGP", "Instituto Geofisico del Peru", IGP_URL, "arcgis")
 def sincronizar_igp(usuario: dict = Depends(usuario_actual)):
     if "Administrador" not in usuario.get("roles", []):
         raise HTTPException(403, "No autorizado para sincronizar IGP")
@@ -77,17 +79,17 @@ def sincronizar_igp(usuario: dict = Depends(usuario_actual)):
                 raise ValueError("Campos incompletos")
             if not (-90 <= lat <= 90 and -180 <= lon <= 180):
                 raise ValueError("Coordenadas invalidas")
-            momento = datetime.fromtimestamp(float(fecha) / 1000, timezone.utc).replace(tzinfo=None)
+            momento = datetime.fromtimestamp(float(fecha) / 1000, timezone.utc)
             profundidad = float(a["prof"]) if a.get("prof") is not None else None
             if profundidad is not None and not math.isfinite(profundidad):
                 profundidad = None
             clave = "IGP-" + str(identificador)[:146]
             validos[clave] = (momento, lat, lon, mag, profundidad,
-                str(a.get("ref") or a.get("departamento") or "Sismo reportado por IGP"))
+                str(a.get("ref") or a.get("departamento") or "Sismo reportado por IGP"), origin_hash(registro))
         except (ValueError, TypeError, OverflowError, KeyError, AttributeError):
             descartados += 1
 
-    ahora = datetime.now(timezone.utc).replace(tzinfo=None)
+    ahora = datetime.now(timezone.utc)
     with Session(engine) as db:
         fuente = db.scalar(select(DataSource).where(DataSource.name == "IGP"))
         if fuente is None:
@@ -95,31 +97,37 @@ def sincronizar_igp(usuario: dict = Depends(usuario_actual)):
                 base_url=IGP_URL, source_type="arcgis", status="active", created_at=ahora)
             db.add(fuente)
             db.flush()
-        existentes = set(db.scalars(select(SeismicEvent.external_id).where(
-            SeismicEvent.source_id == fuente.id,
-            SeismicEvent.external_id.in_(list(validos)))).all()) if validos else set()
-        for clave, (fecha, lat, lon, magnitud, profundidad, lugar) in validos.items():
-            if clave in existentes:
-                continue
-            db.add(SeismicEvent(source_id=fuente.id, external_id=clave,
+        pendientes = []
+        for clave, (fecha, lat, lon, magnitud, profundidad, lugar, huella) in validos.items():
+            pendientes.append(dict(source_id=fuente.id, external_id=clave,
                 occurred_at=fecha, latitude=Decimal(str(lat)),
                 longitude=Decimal(str(lon)), magnitude=Decimal(str(magnitud)),
                 depth_km=Decimal(str(profundidad)) if profundidad is not None else None,
                 magnitude_type=None, place=lugar, source_url=IGP_URL,
-                received_at=ahora, review_status="reported"))
+                received_at=ahora, review_status="reported", origin_hash=huella))
+        cambios = store_events(db, fuente, pendientes)
         fuente.last_sync_at = ahora
         db.commit()
     return {"fuente": "IGP", "recibidos": len(registros),
-            "importados": len(validos) - len(existentes),
-            "duplicados": len(existentes), "descartados": descartados}
+            "importados": cambios["inserted"], "actualizados": cambios["updated"],
+            "duplicados": cambios["unchanged"], "descartados": descartados}
 
 @router.post("/sync-all")
 def sincronizar_todas(usuario: dict = Depends(usuario_actual)):
     if "Administrador" not in usuario.get("roles", []):
         raise HTTPException(403, "No autorizado")
     from app.seismic import sincronizar
-    usgs = sincronizar(usuario)
-    igp = sincronizar_igp(usuario)
-    return {"fuentes": {"USGS": usgs, "IGP": igp},
-            "importados": usgs["importados"] + igp["importados"],
-            "duplicados": usgs["duplicados"] + igp["duplicados"]}
+    results = {}
+    for name, function in (("USGS", sincronizar), ("IGP", sincronizar_igp)):
+        try:
+            results[name] = {**function(usuario), "estado":"success"}
+        except HTTPException as error:
+            if error.status_code in (401,403):
+                raise
+            results[name] = {"estado":"failed", "error":str(error.detail), "importados":0, "duplicados":0}
+    successes = sum(item['estado'] == 'success' for item in results.values())
+    if not successes:
+        raise HTTPException(502, 'Ninguna fuente completo la sincronizacion. Consulta el historial de ingesta para revisar ambos errores.')
+    return {"estado":"success" if successes == 2 else "partial", "fuentes":results,
+            "importados":sum(item['importados'] for item in results.values()),
+            "duplicados":sum(item['duplicados'] for item in results.values())}

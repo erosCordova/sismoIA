@@ -1,5 +1,10 @@
 import os
 import unittest
+import tempfile
+from pathlib import Path
+from datetime import datetime, timedelta, timezone
+from fastapi import HTTPException
+from app import email_notifications
 
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -13,6 +18,28 @@ from app.email_notifications import (
 
 
 class EmailTests(unittest.TestCase):
+
+    def test_lee_configuracion_del_entorno_elegido_sin_exportar_secretos(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path=Path(folder)/'env-test'
+            path.write_text('SISMOIA_EMAIL_ENABLED=true\nSISMOIA_SMTP_HOST=smtp.example.invalid\nSISMOIA_SMTP_USER=test\nSISMOIA_SMTP_PASSWORD=solo_prueba\nSISMOIA_SMTP_FROM=test@example.invalid\n')
+            with patch.object(email_notifications,'ENV_FILE',path), patch.dict(os.environ,{},clear=True):
+                config=configuracion()
+                self.assertTrue(config['habilitado'])
+                self.assertTrue(config['configurado'])
+                self.assertNotIn('solo_prueba',str(config))
+
+    def test_backoff_y_limite_de_reintentos(self):
+        now=datetime.now(timezone.utc)
+        email_notifications.permitir_reintento(0,None,now)
+        with self.assertRaises(HTTPException) as caught:
+            email_notifications.permitir_reintento(1,now,now)
+        self.assertEqual(caught.exception.status_code,429)
+        self.assertIn('Retry-After',caught.exception.headers)
+        email_notifications.permitir_reintento(1,now-timedelta(seconds=61),now)
+        with self.assertRaises(HTTPException) as caught:
+            email_notifications.permitir_reintento(3,now-timedelta(days=1),now)
+        self.assertEqual(caught.exception.status_code,409)
 
     def test_desactivado_por_defecto(self):
         with patch.dict(

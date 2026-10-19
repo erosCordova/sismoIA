@@ -1,4 +1,5 @@
 import SismoiaWorldCamera from "./SismoiaWorldCamera";
+import {apiError} from "./apiErrors";
 import { useContext, useEffect, useState } from "react";
 
 import { Link } from "react-router-dom";
@@ -286,7 +287,7 @@ export default function SismoiaDashboard({ peru }: Props) {
 
           throw new Error(
 
-            `No se pudo consultar el Dashboard: HTTP ${respuesta.status}`
+            await apiError(respuesta, "No se pudo consultar el Dashboard")
 
           );
 

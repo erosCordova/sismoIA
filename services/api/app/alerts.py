@@ -5,13 +5,15 @@ from typing import Literal
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
-from sqlalchemy import select, or_
+from sqlalchemy import select, or_, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from app.access import requerir_permiso
+from app.time_utils import next_utc_date
 from app.database import engine
 from app.models import SeismicEvent, DataSource
 from app.alert_models import AlertRule, SeismicAlert, AlertAction
+from app.alert_delivery_summary import delivery_summaries, summarize_deliveries
 
 router = APIRouter(prefix="/api/v1/alerts", tags=["Alertas sismicas"])
 
@@ -20,6 +22,7 @@ class NuevaRegla(BaseModel):
     magnitud_minima: float = Field(ge=0, le=9.9)
     profundidad_maxima: float | None = Field(None, ge=0, le=750)
     solo_peru: bool = False
+    fuente_permitida: Literal["IGP", "USGS"] | None = None
 
 class CambiarEstado(BaseModel):
     habilitada: bool
@@ -34,7 +37,7 @@ def regla_json(r):
     return {"id": str(r.id), "nombre": r.name,
             "magnitud_minima": float(r.min_magnitude),
             "profundidad_maxima": float(r.max_depth_km) if r.max_depth_km is not None else None,
-            "solo_peru": r.peru_only, "habilitada": r.enabled}
+            "solo_peru": r.peru_only, "habilitada": r.enabled, "fuente_permitida": r.allowed_source}
 
 @router.get("/rules")
 def listar_reglas(usuario=Depends(requerir_permiso("alerts:read"))):
@@ -50,7 +53,7 @@ def crear_regla(datos: NuevaRegla, usuario=Depends(requerir_permiso("rules:manag
     with Session(engine) as db:
         regla = AlertRule(name=nombre, min_magnitude=Decimal(str(datos.magnitud_minima)),
             max_depth_km=Decimal(str(datos.profundidad_maxima)) if datos.profundidad_maxima is not None else None,
-            peru_only=datos.solo_peru, created_by=actor_id(usuario))
+            peru_only=datos.solo_peru, allowed_source=datos.fuente_permitida, created_by=actor_id(usuario))
         db.add(regla)
         try:
             db.flush()
@@ -153,16 +156,14 @@ def evaluar_registros(dias=7, limite=5000, usuario=None):
     # Las alertas operativas no se generan sobre sismos antiguos.
     # La simulacion historica sigue disponible por separado.
     ventana_maxima_horas = 3
-    # SISMOIA_ALERT_RECENT_V1
-    # Evitar alertas nuevas por sismos antiguos.
-    ventana_maxima_horas = 3
     desde = max(
         ahora - timedelta(days=dias),
         ahora - timedelta(hours=ventana_maxima_horas),
-    ).replace(tzinfo=None)
-    hasta = ahora.replace(tzinfo=None)
+    )
+    hasta = ahora
 
     with Session(engine) as db:
+        db.execute(text("SELECT pg_advisory_xact_lock(2026101802)"))
         reglas = db.scalars(
             select(AlertRule).where(
                 AlertRule.enabled.is_(True)
@@ -171,7 +172,7 @@ def evaluar_registros(dias=7, limite=5000, usuario=None):
 
         eventos = db.scalars(
             select(SeismicEvent)
-            .where(SeismicEvent.occurred_at.between(desde, ahora.replace(tzinfo=None)), SeismicEvent.occurred_at <= hasta)
+            .where(SeismicEvent.occurred_at.between(desde, ahora), SeismicEvent.occurred_at <= hasta)
             .order_by(SeismicEvent.occurred_at.desc())
             .limit(limite + 1)
         ).all()
@@ -208,6 +209,7 @@ def evaluar_registros(dias=7, limite=5000, usuario=None):
                     regla_id, []
                 ).append(evento)
 
+        nombres_fuentes = dict(db.execute(select(DataSource.id, DataSource.name)).all())
         nuevos = 0
         agrupados_total = 0
         existentes_omitidos = 0
@@ -216,6 +218,8 @@ def evaluar_registros(dias=7, limite=5000, usuario=None):
             candidatos = []
 
             for evento in eventos:
+                if regla.allowed_source and nombres_fuentes.get(evento.source_id) != regla.allowed_source:
+                    continue
                 magnitud = float(evento.magnitude)
 
                 if magnitud < float(regla.min_magnitude):
@@ -336,7 +340,7 @@ def listar_alertas(estado: Literal["pending", "approved", "dismissed"] | None = 
 def revisar(alert_id: UUID, datos: Revision,
             usuario=Depends(requerir_permiso("alerts:approve"))):
     with Session(engine) as db:
-        alerta = db.get(SeismicAlert, alert_id)
+        alerta = db.get(SeismicAlert, alert_id, with_for_update=True)
         if alerta is None:
             raise HTTPException(404, "Alerta no encontrada")
         if alerta.status != "pending":
@@ -360,7 +364,7 @@ def historial(usuario=Depends(requerir_permiso("audit:read"))):
 
 
 # SISMOIA_ALERTAS_OPERATIVAS_V2
-# Ampliaciones de solo lectura, simulación y trazabilidad.
+# Ampliaciones de solo lectura, simulaciÃ³n y trazabilidad.
 # No ejecutan entregas externas.
 
 from collections import Counter
@@ -375,7 +379,7 @@ def fecha_alerta(valor):
     return valor.astimezone(timezone.utc).isoformat()
 
 
-def alerta_extendida(alerta, regla, evento, fuente):
+def alerta_extendida(alerta, regla, evento, fuente, entrega=None):
     return {
         "id": str(alerta.id),
         "regla_id": str(regla.id),
@@ -385,7 +389,7 @@ def alerta_extendida(alerta, regla, evento, fuente):
         "titulo": f"Evento observado M{float(evento.magnitude):.1f}",
         "mensaje": (
             f"Registro de {fuente}: magnitud {float(evento.magnitude):.1f}, "
-            f"ubicación {evento.place or 'no especificada'}. "
+            f"ubicaciÃ³n {evento.place or 'no especificada'}. "
             "Aviso interno no oficial."
         ),
         "severidad": alerta.severity,
@@ -417,16 +421,7 @@ def alerta_extendida(alerta, regla, evento, fuente):
             str(alerta.reviewed_by)
             if alerta.reviewed_by else None
         ),
-        "entrega": {
-            "estado": "no_implementada",
-            "canal": None,
-            "destinatarios": None,
-            "entregada_utc": None,
-            "intentos": 0,
-            "ultimo_intento_utc": None,
-            "error": None,
-            "acuse": None,
-        },
+        "entrega": entrega if entrega is not None else summarize_deliveries([], []),
     }
 
 
@@ -533,7 +528,7 @@ def bandeja_alertas(
     if hasta:
         condiciones.append(
             SeismicEvent.occurred_at < datetime.combine(
-                hasta + timedelta(days=1),
+                next_utc_date(hasta),
                 time.min,
                 tzinfo=timezone.utc
             )
@@ -621,6 +616,7 @@ def bandeja_alertas(
         ) or 0
 
         filas = db.execute(consulta).all()
+        entregas = delivery_summaries(db, [fila[0].id for fila in filas])
 
     return {
         "total": int(total),
@@ -631,7 +627,7 @@ def bandeja_alertas(
             (int(total) + limite - 1) // limite
         ),
         "alertas": [
-            alerta_extendida(a, r, e, nombre)
+            alerta_extendida(a, r, e, nombre, entregas[a.id])
             for a, r, e, nombre in filas
         ],
         "actualizado_utc": datetime.now(
@@ -687,7 +683,8 @@ def detalle_operativo_alerta(
         ).all()
 
         respuesta = alerta_extendida(
-            alerta, regla, evento, fuente
+            alerta, regla, evento, fuente,
+            delivery_summaries(db, [alerta.id])[alerta.id]
         )
 
         respuesta["regla_configuracion"] = regla_json(

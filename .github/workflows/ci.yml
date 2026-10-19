@@ -14,10 +14,30 @@ jobs:
         working-directory: apps/web
   api:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: sismoia_test
+          POSTGRES_USER: sismoia_test
+          POSTGRES_PASSWORD: local_test_only
+        ports:
+          - 55433:5432
+        options: >-
+          --health-cmd "pg_isready -U sismoia_test -d sismoia_test"
+          --health-interval 3s --health-timeout 3s --health-retries 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-      - run: python -m pip install -r services/api/requirements.txt
+      - run: python -m pip install -r services/api/requirements.txt -c services/api/requirements.constraints.txt
       - run: python -m compileall -q services/api/app
+      - name: Pruebas unitarias y regresiones del plan
+        run: python -m unittest discover -s services/api/tests -p "test_*.py" -v
+        env:
+          PYTHONPATH: services/api
+          DATABASE_URL: postgresql+psycopg://sismoia_test:local_test_only@127.0.0.1:55433/sismoia_test
+          SISMOIA_TEST_POSTGRES_URL: postgresql+psycopg://sismoia_test:local_test_only@127.0.0.1:55433/sismoia_test
+          JWT_SECRET_KEY: ci-only-not-a-secret-isolated-tests-key-01234567890123456789
+          SISMOIA_EMAIL_ENABLED: "false"

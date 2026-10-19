@@ -1,3 +1,4 @@
+from app.time_utils import utc_iso, as_utc
 import csv
 import io
 from datetime import datetime, timedelta, timezone
@@ -8,12 +9,64 @@ from sqlalchemy.orm import Session
 from app.access import requerir_permiso
 from app.database import engine
 from app.models import DataSource, SeismicEvent
+from typing import Literal
 
 router = APIRouter(prefix="/api/v1/reports", tags=["Reportes"])
+
+
+@router.get('/modules.csv')
+def exportar_modulo(tipo: Literal['calidad', 'modelos', 'alertas'], dias: int = Query(30, ge=1, le=365),
+                     peru: bool = True, fuente: Literal['IGP', 'USGS'] | None = None,
+                     usuario=Depends(requerir_permiso('reports:create'))):
+    from app.governance_models import ExperimentRun, DatasetVersion
+    from app.alert_models import SeismicAlert, AlertRule
+    cutoff = datetime.now(timezone.utc)
+    conditions = filtros(dias, peru, fuente, cutoff)
+    with Session(engine) as db:
+        if tipo == 'calidad':
+            rows = db.execute(select(DataSource.name, func.count(), func.count(SeismicEvent.depth_km),
+                                     func.min(SeismicEvent.occurred_at), func.max(SeismicEvent.occurred_at))
+                              .join(DataSource, DataSource.id == SeismicEvent.source_id)
+                              .where(*conditions).group_by(DataSource.name)).all()
+            columns = ['fuente', 'registros', 'con_profundidad', 'sin_profundidad', 'primer_evento_utc', 'ultimo_evento_utc']
+            values = [[s, n, depth, n-depth, utc_iso(first), utc_iso(last)] for s,n,depth,first,last in rows]
+        elif tipo == 'modelos':
+            query = select(ExperimentRun.id, DatasetVersion.id, DatasetVersion.signature, ExperimentRun.algorithm,
+                           ExperimentRun.results, ExperimentRun.status, ExperimentRun.created_at, ExperimentRun.artifact_sha256)
+            query = query.join(DatasetVersion, DatasetVersion.id == ExperimentRun.dataset_id)
+            criteria = [ExperimentRun.created_at.between(cutoff-timedelta(days=dias), cutoff),
+                        func.coalesce(ExperimentRun.parameters['peru'].as_boolean(), DatasetVersion.manifest['peru'].as_boolean()) == peru]
+            if fuente:
+                criteria.append(func.coalesce(ExperimentRun.parameters['fuente'].as_string(), DatasetVersion.manifest['fuente'].as_string()) == fuente)
+            rows = db.execute(query.where(*criteria).order_by(ExperimentRun.created_at.desc()).limit(10001)).all()
+            columns = ['experimento_id', 'dataset_id', 'dataset_sha256', 'algoritmo', 'modelo', 'estado', 'fecha_utc', 'artefacto_sha256']
+            values = [[str(eid), str(did), signature, algorithm, result.get('modelo_seleccionado') or result.get('modelo'),
+                       status, utc_iso(created), artifact_hash] for eid,did,signature,algorithm,result,status,created,artifact_hash in rows]
+        else:
+            rows = db.execute(select(SeismicAlert, AlertRule.name, DataSource.name, SeismicEvent.magnitude)
+                              .join(SeismicEvent, SeismicEvent.id == SeismicAlert.event_id)
+                              .join(DataSource, DataSource.id == SeismicEvent.source_id)
+                              .join(AlertRule, AlertRule.id == SeismicAlert.rule_id)
+                              .where(*conditions, SeismicAlert.created_at <= cutoff)
+                              .order_by(SeismicAlert.created_at.desc()).limit(10001)).all()
+            columns = ['alerta_id', 'evento_id', 'regla', 'fuente', 'magnitud', 'severidad', 'estado', 'creada_utc', 'revisada_utc']
+            values = [[str(a.id), str(a.event_id), rule, source, mag, a.severity, a.status, utc_iso(a.created_at), utc_iso(a.reviewed_at)] for a,rule,source,mag in rows]
+    limited = len(values) > 10000
+    stream = io.StringIO()
+    writer = csv.writer(stream)
+    context_columns = ['tipo_reporte', 'fecha_corte_utc', 'dias', 'peru', 'fuente_filtro', 'solicitante_id', 'limitado', 'filas_reporte']
+    context = [tipo, utc_iso(cutoff), dias, peru, fuente or 'Todas', usuario.get('id'), limited, min(len(values),10000)]
+    writer.writerow(context_columns + columns)
+    for row in values[:10000] or [[None]*len(columns)]:
+        writer.writerow([texto_seguro(value) if isinstance(value,str) else value for value in context+row])
+    registrar_descarga(usuario, f'{tipo}.csv', dias, peru, fuente)
+    return Response('\ufeff'+stream.getvalue(), media_type='text/csv; charset=utf-8', headers={
+        'Content-Disposition':f'attachment; filename=sismoia_{tipo}.csv', 'Cache-Control':'no-store',
+        'X-Export-Truncated':str(limited).lower()})
 LIMITE_EXPORTACION = 10000
 
-def filtros(dias, peru, fuente):
-    ahora = datetime.now(timezone.utc)
+def filtros(dias, peru, fuente, corte=None):
+    ahora = corte or datetime.now(timezone.utc)
     condiciones = [
         SeismicEvent.occurred_at >= ahora - timedelta(days=dias),
         SeismicEvent.occurred_at <= ahora
@@ -34,7 +87,8 @@ def resumen(
     fuente: str | None = Query(None, max_length=100),
     usuario=Depends(requerir_permiso("reports:read"))
 ):
-    condiciones = filtros(dias, peru, fuente)
+    corte = datetime.now(timezone.utc)
+    condiciones = filtros(dias, peru, fuente, corte)
     rangos = [
         "Menor a 2", "2 a 3", "3 a 4", "4 a 5",
         "5 a 6", "6 a 7", "7 o mas"
@@ -64,7 +118,7 @@ def resumen(
             .where(*condiciones)
             .group_by(DataSource.name).order_by(DataSource.name)
         ).all()
-        mes = func.to_char(SeismicEvent.occurred_at, "YYYY-MM")
+        mes = func.to_char(func.timezone("UTC", SeismicEvent.occurred_at), "YYYY-MM")
         por_mes = db.execute(
             select(mes.label("mes"), func.count(SeismicEvent.id))
             .select_from(SeismicEvent).join(DataSource)
@@ -77,11 +131,14 @@ def resumen(
         ).all())
     return {
         "dias": dias, "peru": peru, "fuente": fuente,
+        "fecha_corte_utc": corte.isoformat(),
+        "solicitante": usuario.get("nombre") or usuario.get("id"),
+        "solicitante_id": usuario.get("id"),
         "total": int(total),
         "magnitud_promedio": round(float(media), 2) if media is not None else None,
         "magnitud_maxima": float(maxima) if maxima is not None else None,
-        "primera_fecha_utc": desde.isoformat() if desde else None,
-        "ultima_fecha_utc": hasta.isoformat() if hasta else None,
+        "primera_fecha_utc": utc_iso(desde),
+        "ultima_fecha_utc": utc_iso(hasta),
         "por_fuente": [{"nombre": n, "cantidad": int(c)} for n, c in por_fuente],
         "por_mes": [{"etiqueta": m, "cantidad": int(c)} for m, c in por_mes],
         "por_magnitud": [{"etiqueta": r, "cantidad": int(por_magnitud.get(r, 0))} for r in rangos],
@@ -104,7 +161,10 @@ def exportar(
     fuente: str | None = Query(None, max_length=100),
     usuario=Depends(requerir_permiso("reports:create"))
 ):
-    condiciones = filtros(dias, peru, fuente)
+    corte = datetime.now(timezone.utc)
+    condiciones = filtros(dias, peru, fuente, corte)
+    with Session(engine) as db:
+        total_disponible = int(db.scalar(select(func.count(SeismicEvent.id)).join(DataSource, DataSource.id == SeismicEvent.source_id).where(*condiciones)) or 0)
     registrar_descarga(usuario, "csv", dias, peru, fuente)
     consulta = (
         select(SeismicEvent.external_id, SeismicEvent.occurred_at,
@@ -122,7 +182,8 @@ def exportar(
         escritor = csv.writer(salida)
         escritor.writerow([
             "id_externo", "fecha_utc", "fuente", "magnitud",
-            "profundidad_km", "latitud", "longitud", "lugar", "url_fuente"
+            "profundidad_km", "latitud", "longitud", "lugar", "url_fuente",
+            "fecha_corte_utc", "filtro_dias", "filtro_peru", "filtro_fuente", "solicitante_id", "total_disponible", "exportacion_limitada"
         ])
         yield "\ufeff" + salida.getvalue()
         with Session(engine) as db:
@@ -131,15 +192,19 @@ def exportar(
                 salida.truncate(0)
                 id_externo, fecha, origen, mag, profundidad, lat, lon, lugar, url = fila
                 escritor.writerow([
-                    texto_seguro(id_externo), fecha.isoformat(),
+                    texto_seguro(id_externo), utc_iso(fecha),
                     texto_seguro(origen), mag, profundidad, lat, lon,
-                    texto_seguro(lugar), texto_seguro(url)
+                    texto_seguro(lugar), texto_seguro(url),
+                    corte.isoformat(), dias, peru, texto_seguro(fuente or "Todas"),
+                    texto_seguro(usuario.get("id")), total_disponible, total_disponible > LIMITE_EXPORTACION
                 ])
                 yield salida.getvalue()
     return StreamingResponse(
         generar(), media_type="text/csv; charset=utf-8",
         headers={
             "Content-Disposition": "attachment; filename=sismoia_reporte.csv",
+            "X-Export-Total": str(total_disponible),
+            "X-Export-Truncated": str(total_disponible > LIMITE_EXPORTACION).lower(),
             "Cache-Control": "no-store"
         }
     )
@@ -258,6 +323,9 @@ def exportar_xlsx(
 
     hoja("Resumen", ["Indicador", "Valor"], [
         ("Sistema", "SISMOIA Enterprise"),
+        ("Solicitante", datos["solicitante"]),
+        ("Fecha de corte UTC", datos["fecha_corte_utc"]),
+        ("Contenido", "Resumen agregado; CSV contiene eventos individuales"),
         ("Zona", "Perú" if peru else "Mundo"),
         ("Fuente", fuente or "Todas"),
         ("Periodo (días)", dias),
@@ -360,6 +428,8 @@ def exportar_pdf(
         return f"{etiqueta}: {valor}"
 
     lineas = [
+        ("Solicitante", str(datos["solicitante"])[:65]),
+        ("Corte UTC", datos["fecha_corte_utc"]),
         ("Zona", "Peru" if peru else "Mundo"),
         ("Fuente", fuente or "Todas"),
         ("Periodo", f"{dias} dias"),

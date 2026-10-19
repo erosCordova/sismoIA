@@ -1,4 +1,5 @@
 import {useContext, useEffect, useState} from "react";
+import {apiError} from "./apiErrors";
 import {
   Database, Download, RefreshCw, ShieldCheck
 } from "lucide-react";
@@ -140,7 +141,7 @@ export default function PreparationWorkspace({
 
         if (!r.ok) {
           throw Error(
-            `No se pudo consultar el dataset: HTTP ${r.status}`
+            await apiError(r, "No se pudo consultar el dataset")
           );
         }
 
@@ -200,7 +201,7 @@ export default function PreparationWorkspace({
       );
 
       if (!r.ok) {
-        throw Error(`Error al exportar: HTTP ${r.status}`);
+        throw Error(await apiError(r, "No se pudo exportar el dataset"));
       }
 
       const blob = await r.blob();

@@ -1,0 +1,25 @@
+.result-reading {
+  margin: 18px 0;
+  padding: 20px;
+  border: 1px solid #b9dce6;
+  border-left: 4px solid #137a98;
+  border-radius: 12px;
+  background: #f3fafc;
+  color: #153e50;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.result-reading h4 { margin: 0 0 4px; font-size: 17px; color: #12364b; }
+.result-reading p { margin: 10px 0; font-size: 14px; }
+.result-reading .result-reading-context { margin: 0 0 14px; color: #456675; font-size: 13px; }
+.result-reading details { margin-top: 15px; border-top: 1px solid #cce1e8; padding-top: 12px; }
+.result-reading summary { cursor: pointer; font-weight: 700; font-size: 14px; }
+.result-reading summary:focus-visible { outline: 2px solid #137a98; outline-offset: 4px; }
+.result-reading dt { margin-top: 12px; font-weight: 700; font-size: 14px; }
+.result-reading dd { margin: 4px 0 0; font-size: 14px; }
+.result-reading-counts { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+.result-reading-counts p { margin: 0; padding: 12px; background: white; border: 1px solid #d5e7ed; border-radius: 8px; }
+.result-reading-counts strong { display: block; font-size: 21px; }
+.result-reading-picker { margin-top: 18px; }
+.result-reading-picker > label { display: block; margin-bottom: 6px; font-size: 14px; font-weight: 700; }
+.result-reading-picker > select { padding: 10px; width: 100%; max-width: 430px; border: 1px solid #b9dce6; border-radius: 8px; background: white; color: #153e50; }

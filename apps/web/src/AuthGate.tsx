@@ -1,5 +1,6 @@
 import {
   createContext,
+  useEffect,
   useState,
   type FormEvent,
   type ReactNode
@@ -32,6 +33,7 @@ type Usuario = {
 type Sesion = {
   token: string;
   usuario: Usuario;
+  expiresAt: number;
 };
 
 export const UsuarioContext = createContext<Usuario | null>(null);
@@ -49,6 +51,43 @@ export default function AuthGate({
   const [mostrarClave, setMostrarClave] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
+  const sessionToken = sesion?.token;
+  const sessionExpiresAt = sesion?.expiresAt;
+
+  useEffect(() => {
+    if (!sessionToken || !sessionExpiresAt) return;
+    const controller = new AbortController();
+    function caducar() {
+      setSesion(null);
+      setPassword("");
+      setPantallaIngreso(true);
+      setError("La sesión venció o dejó de estar autorizada. Inicia sesión nuevamente.");
+    }
+    const timeout = window.setTimeout(caducar, Math.max(0, sessionExpiresAt - Date.now()));
+    async function actualizarPerfil() {
+      try {
+        const response = await fetch("/api/v1/auth/me", {
+          signal: controller.signal, cache: "no-store",
+          headers: {Authorization: `Bearer ${sessionToken}`}
+        });
+        if (controller.signal.aborted) return;
+        if (response.status === 401 || response.status === 403) {caducar(); return;}
+        if (!response.ok) return;
+        const perfil: Usuario = await response.json();
+        if (!controller.signal.aborted && Array.isArray(perfil.permisos) && Array.isArray(perfil.roles)) {
+          setSesion(current => current && current.token === sessionToken ? {...current, usuario: perfil} : current);
+        }
+      } catch { /* Un fallo de red no invalida por si solo la sesion. */ }
+    }
+    const interval = window.setInterval(() => { void actualizarPerfil(); }, 60000);
+    window.addEventListener("focus", actualizarPerfil);
+    return () => {
+      controller.abort();
+      window.clearTimeout(timeout);
+      window.clearInterval(interval);
+      window.removeEventListener("focus", actualizarPerfil);
+    };
+  }, [sessionToken, sessionExpiresAt]);
 
   async function ingresar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
@@ -102,6 +141,7 @@ export default function AuthGate({
 
       const datos: {
         access_token?: string;
+        expires_in?: number;
       } = await respuesta.json();
 
       if (
@@ -139,7 +179,8 @@ export default function AuthGate({
 
       setSesion({
         token: datos.access_token,
-        usuario
+        usuario,
+        expiresAt: Date.now() + (typeof datos.expires_in === "number" && datos.expires_in > 0 ? datos.expires_in : 3600) * 1000
       });
 
       setPassword("");
@@ -156,13 +197,24 @@ export default function AuthGate({
     }
   }
 
-  function cerrarSesion() {
+  async function cerrarSesion() {
+    if (cargando) return;
+    setCargando(true);
+    let aviso = "";
+    try {
+      const response = await fetch("/api/v1/auth/logout", {method:"POST", signal:AbortSignal.timeout(5000),
+        headers:{Authorization:`Bearer ${sesion?.token}`}});
+      if (!response.ok && response.status !== 401) throw Error("No se confirmó el cierre en el servidor");
+    } catch {
+      aviso = "Se cerró la sesión local. No se pudo confirmar el cierre en el servidor; la sesión anterior conservará su vencimiento original.";
+    }
     setSesion(null);
     setPantallaIngreso(false);
     setEmail("");
     setPassword("");
     setMostrarClave(false);
-    setError("");
+    setError(aviso);
+    setCargando(false);
   }
 
   if (sesion) {
@@ -180,7 +232,8 @@ export default function AuthGate({
 
           <button
             type="button"
-            onClick={cerrarSesion}
+            onClick={() => void cerrarSesion()}
+            disabled={cargando}
           >
             <LogOut size={15} aria-hidden="true" />
             Cerrar sesión

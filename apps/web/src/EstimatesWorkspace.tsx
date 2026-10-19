@@ -13,6 +13,7 @@ import {TokenContext} from "./AuthGate";
 import "./preparation.css";
 import "./models.css";
 import "./alerts-enterprise.css";
+import PublishedZoneEstimates from "./PublishedZoneEstimates";
 
 type Serie = {
   etiqueta: string;
@@ -451,6 +452,7 @@ export default function EstimatesWorkspace({
           </article>
         </>
       )}
+      <PublishedZoneEstimates key={peru ? "peru" : "mundo"} peru={peru}/>
     </section>
   );
 }

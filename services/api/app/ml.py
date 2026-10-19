@@ -1,18 +1,37 @@
 import csv
+import os
 import json
 from collections import Counter
 from pathlib import Path
 from typing import Literal
 import joblib
 import numpy as np
+import pickle
+from functools import wraps
 from fastapi import APIRouter, Depends, HTTPException, Query
 from app.access import requerir_permiso
+from app.ml_artifacts import active_directory, database_rows, generate
 
 router = APIRouter(prefix="/api/v1/ml", tags=["Machine Learning"])
-BASE = Path(__file__).resolve().parents[1] / "data" / "processed"
+BASE = Path(os.environ.get("SISMOIA_ML_OUTPUT_DIR") or Path(__file__).resolve().parents[1] / "data" / "processed")
+
+
+def optional_artifacts(function):
+    @wraps(function)
+    def guarded(*args, **kwargs):
+        try:
+            return function(*args, **kwargs)
+        except HTTPException as error:
+            if error.status_code not in (409, 503):
+                raise
+            detail = error.detail
+        except (OSError, ValueError, KeyError, TypeError, AttributeError, EOFError, ImportError, pickle.UnpicklingError):
+            detail = "Los archivos de agrupamientos estan incompletos o no son compatibles. Vuelve a generar los agrupamientos con datos actuales."
+        return {"disponible": False, "detalle": detail, "experimentos": [], "datasets": [], "puntos": [], "total": 0}
+    return guarded
 
 def archivo(nombre):
-    ruta = BASE / nombre
+    ruta = active_directory(BASE) / nombre
     if not ruta.is_file():
         raise HTTPException(503, "Modelo o dataset no disponible: " + nombre)
     return ruta
@@ -22,7 +41,10 @@ def modelo(nombre):
     return joblib.load(archivo(nombre))
 
 @router.get("/overview")
+@optional_artifacts
 def resumen(usuario: dict = Depends(requerir_permiso("models:read"))):
+    if not all((active_directory(BASE) / name).is_file() for name in ('ml_metrics.json', 'kmeans_model.joblib', 'dbscan_model.joblib')):
+        return {"disponible": False, "detalle": "Todavia no hay agrupamientos generados. Utiliza Generar agrupamientos con datos actuales."}
     metricas = json.loads(archivo("ml_metrics.json").read_text(encoding="utf-8"))
     km = modelo("kmeans_model.joblib")["modelo"]
     db = modelo("dbscan_model.joblib")["modelo"]
@@ -31,15 +53,24 @@ def resumen(usuario: dict = Depends(requerir_permiso("models:read"))):
     metricas["kmeans"]["distribucion"] = {str(k): v for k, v in sorted(conteo_km.items())}
     metricas["dbscan"]["distribucion"] = {str(k): v for k, v in sorted(conteo_db.items())}
     metricas["dbscan"]["ruido"] = conteo_db.get(-1, 0)
+    metricas["disponible"] = True
     return metricas
 
+
+@router.post("/train-clustering")
+def entrenar_agrupamientos(peru: bool = False, usuario: dict = Depends(requerir_permiso("models:train"))):
+    return generate(BASE, database_rows(peru=peru), peru=peru)
+
 @router.get("/clusters")
+@optional_artifacts
 def agrupaciones(
     conjunto: Literal["entrenamiento", "evaluacion"] = "evaluacion",
     limite: int = Query(300, ge=1, le=500),
     usuario: dict = Depends(requerir_permiso("models:read"))
 ):
     nombre = "sismoia_" + conjunto + ".csv"
+    if not all((active_directory(BASE) / name).is_file() for name in (nombre, 'kmeans_model.joblib')):
+        return {"disponible": False, "conjunto": conjunto, "total": 0, "puntos": [], "detalle": "Genera los agrupamientos para visualizar sus puntos"}
     with archivo(nombre).open(encoding="utf-8-sig", newline="") as f:
         filas = list(csv.DictReader(f))
     paquete = modelo("kmeans_model.joblib")
@@ -56,7 +87,7 @@ def agrupaciones(
         "profundidad_km": float(r["profundidad_km"]) if r["profundidad_km"] else None,
         "grupo": int(g)
     } for r, g in zip(recientes, grupos)]
-    return {"conjunto": conjunto, "total": len(filas), "puntos": puntos}
+    return {"disponible": True, "conjunto": conjunto, "total": len(filas), "puntos": puntos}
 
 
 # ============================================================
@@ -91,10 +122,12 @@ def fecha_archivo(ruta):
 
 
 @router.get("/registry")
+@optional_artifacts
 def registro_ml(
     usuario: dict = Depends(requerir_permiso("models:read"))
 ):
-    metricas_ruta = BASE / "ml_metrics.json"
+    base = active_directory(BASE)
+    metricas_ruta = base / "ml_metrics.json"
 
     metricas = {}
     if metricas_ruta.is_file():
@@ -112,7 +145,7 @@ def registro_ml(
         "sismoia_entrenamiento.csv",
         "sismoia_evaluacion.csv",
     ]:
-        ruta = BASE / nombre
+        ruta = base / nombre
         dataset.append({
             "nombre": nombre,
             "disponible": ruta.is_file(),
@@ -123,7 +156,7 @@ def registro_ml(
     experimentos = []
 
     for nombre, archivo_modelo, clave in archivos:
-        ruta = BASE / archivo_modelo
+        ruta = base / archivo_modelo
         disponible = ruta.is_file()
 
         experimento = {
@@ -133,7 +166,7 @@ def registro_ml(
             "objetivo": "Explorar patrones del catálogo histórico",
             "variable_objetivo": None,
             "ruta_artefacto": (
-                f"data/processed/{archivo_modelo}"
+                f"data/processed/{ruta.relative_to(BASE).as_posix()}"
                 if disponible else None
             ),
             "version": (
@@ -144,9 +177,7 @@ def registro_ml(
                 fecha_archivo(ruta)
                 if disponible else None
             ),
-            "fecha_entrenamiento_utc": metricas.get(
-                "fecha_entrenamiento_utc"
-            ),
+            "fecha_entrenamiento_utc": metricas.get("fecha_entrenamiento_utc") or metricas.get("generado_utc"),
             "estado": (
                 "Artefacto disponible"
                 if disponible else "No disponible"
@@ -214,7 +245,7 @@ def registro_ml(
     }
 
 
-def leer_registros_supervisados():
+def leer_registros_supervisados_archivos():
     registros = {}
     hashes = []
 
@@ -292,169 +323,39 @@ def leer_registros_supervisados():
     ).hexdigest()[:16]
 
 
+def leer_registros_supervisados(peru=False):
+    # La base principal evita depender de CSV que no se distribuyen con el proyecto.
+    rows = database_rows(peru=peru)
+    signature = sha256(json.dumps(rows, sort_keys=True).encode()).hexdigest()[:16]
+    return [{"id": r["id"], "fecha": datetime.fromisoformat(r["fecha_utc"].replace("Z", "+00:00")),
+             "x": [r["latitud"], r["longitud"], r["profundidad_km"]], "y": r["magnitud"], "fuente": r["fuente"]} for r in rows], signature
+
+
 @router.get("/regression-validation")
-def validar_regresion(
-    usuario: dict = Depends(requerir_permiso("models:read"))
-):
-    registros, version_dataset = leer_registros_supervisados()
-
-    if len(registros) < 60:
-        raise HTTPException(
-            422,
-            "Se necesitan al menos 60 registros históricos "
-            "válidos para evaluar la regresión."
-        )
-
-    corte = int(len(registros) * 0.8)
-    entrenamiento = registros[:corte]
-    evaluacion = registros[corte:]
-
-    x_train = np.asarray(
-        [r["x"] for r in entrenamiento],
-        dtype=float
-    )
-    y_train = np.asarray(
-        [r["y"] for r in entrenamiento],
-        dtype=float
-    )
-
-    x_test = np.asarray(
-        [r["x"] for r in evaluacion],
-        dtype=float
-    )
-    y_test = np.asarray(
-        [r["y"] for r in evaluacion],
-        dtype=float
-    )
-
-    modelos = [
-        (
-            "Referencia: media histórica",
-            make_pipeline(
-                SimpleImputer(strategy="median"),
-                DummyRegressor(strategy="mean")
-            ),
-            {"strategy": "mean"}
-        ),
-        (
-            "Regresión Ridge",
-            make_pipeline(
-                SimpleImputer(strategy="median"),
-                StandardScaler(),
-                Ridge(alpha=10.0)
-            ),
-            {"alpha": 10.0}
-        ),
-        (
-            "Random Forest",
-            make_pipeline(
-                SimpleImputer(strategy="median"),
-                RandomForestRegressor(
-                    n_estimators=60,
-                    max_depth=8,
-                    min_samples_leaf=4,
-                    random_state=42,
-                    n_jobs=1
-                )
-            ),
-            {
-                "n_estimators": 60,
-                "max_depth": 8,
-                "min_samples_leaf": 4,
-                "random_state": 42
-            }
-        ),
-    ]
-
-    comparacion = []
-    predicciones = {}
-
-    for nombre, estimador, hiperparametros in modelos:
-        estimador.fit(x_train, y_train)
-        estimado = estimador.predict(x_test)
-
-        comparacion.append({
-            "modelo": nombre,
-            "mae": round(
-                float(mean_absolute_error(
-                    y_test, estimado
-                )), 4
-            ),
-            "rmse": round(
-                sqrt(float(mean_squared_error(
-                    y_test, estimado
-                ))), 4
-            ),
-            "r2": round(
-                float(r2_score(y_test, estimado)), 4
-            ),
-            "hiperparametros": hiperparametros,
-        })
-
-        predicciones[nombre] = estimado
-
-    mejor = min(
-        comparacion,
-        key=lambda r: r["mae"]
-    )["modelo"]
-
-    estimado_mejor = predicciones[mejor]
-
-    paso = max(1, len(evaluacion) // 60)
-
-    muestra = [
-        {
-            "fecha": evaluacion[i]["fecha"].isoformat(),
-            "real": round(
-                float(y_test[i]), 3
-            ),
-            "estimada": round(
-                float(estimado_mejor[i]), 3
-            ),
-        }
-        for i in range(
-            0, len(evaluacion), paso
-        )
-    ][:60]
-
+def validar_regresion(peru: bool = False, usuario: dict = Depends(requerir_permiso("models:train"))):
+    from types import SimpleNamespace
+    from app.ml_data import temporal_split
+    from app.ml_engine import ejecutar_experimento_v2
+    registros, firma = leer_registros_supervisados(peru=peru)
+    filas = [{"id": r["id"], "fecha_utc": r["fecha"].isoformat(), "latitud": r["x"][0],
+              "longitud": r["x"][1], "profundidad_km": r["x"][2], "magnitud": r["y"],
+              "fuente": r.get("fuente", "No especificada")} for r in registros]
+    train, test = temporal_split(filas, min_train=40, min_test=8)
+    for label, block in (("entrenamiento", train), ("validacion", test)):
+        for row in block:
+            row["particion"] = label
+    dataset = SimpleNamespace(snapshot=train+test, manifest={"objetivo":"magnitud"}, signature=firma)
+    params, results, _, _ = ejecutar_experimento_v2(dataset, "regresion")
     return {
-        "objetivo": (
-            "Estimar la magnitud registrada a partir "
-            "de ubicación y profundidad observadas."
-        ),
-        "tipo": "Regresión supervisada experimental",
-        "dataset_version": version_dataset,
-        "variables": [
-            "latitud", "longitud", "profundidad_km"
-        ],
-        "variable_objetivo": "magnitud",
-        "entrenamiento": len(entrenamiento),
-        "evaluacion": len(evaluacion),
-        "fecha_entrenamiento_desde": (
-            entrenamiento[0]["fecha"].isoformat()
-        ),
-        "fecha_entrenamiento_hasta": (
-            entrenamiento[-1]["fecha"].isoformat()
-        ),
-        "fecha_validacion_desde": (
-            evaluacion[0]["fecha"].isoformat()
-        ),
-        "fecha_validacion_hasta": (
-            evaluacion[-1]["fecha"].isoformat()
-        ),
-        "calculado_utc": datetime.now(
-            timezone.utc
-        ).isoformat(),
-        "comparacion": comparacion,
-        "mejor_mae": mejor,
-        "real_vs_estimado": muestra,
-        "estado": "Evaluación temporal no persistida",
-        "advertencia": (
-            "Resultados calculados con un subconjunto "
-            "histórico de hasta 3.000 registros y separación "
-            "cronológica 80/20. Las características incluyen "
-            "profundidad observada del mismo evento. "
-            "No son predicciones anticipadas de terremotos. "
-            "No se guarda un nuevo modelo y no se activan alertas."
-        ),
+        "objetivo": "Estimar magnitud de eventos ya observados", "tipo": "Regresion retrospectiva",
+        "dataset_version": firma, "origen": "Supabase/PostgreSQL", "peru": peru, "variables": params["variables"], "variable_objetivo":"magnitud",
+        "entrenamiento":len(train), "evaluacion":len(test),
+        "fecha_entrenamiento_desde":train[0]["fecha_utc"], "fecha_entrenamiento_hasta":train[-1]["fecha_utc"],
+        "fecha_validacion_desde":test[0]["fecha_utc"], "fecha_validacion_hasta":test[-1]["fecha_utc"],
+        "calculado_utc":datetime.now(timezone.utc).isoformat(),
+        "comparacion":[{**r,"hiperparametros":params["hiperparametros_candidatos"][r["modelo"]]} for r in results["comparacion"]],
+        "mejor_mae":results["modelo_seleccionado"],
+        "real_vs_estimado":[{"fecha":r["fecha_utc"],"real":r["real"],"estimada":r["estimado"]} for r in results["serie_validacion"]],
+        "estado":"Laboratorio no persistido; seleccion por desarrollo interno",
+        "advertencia":"Seleccion independiente de la prueba final. Datos observados, no pronosticos. Para conservar el experimento utiliza Gobierno ML."
     }

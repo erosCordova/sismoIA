@@ -4,7 +4,8 @@ from decimal import Decimal
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import and_, func, select
 from sqlalchemy.orm import Session, aliased
-from app.auth import usuario_actual
+from app.access import requerir_permiso
+from app.time_utils import utc_iso
 from app.database import engine
 from app.models import DataSource, SeismicEvent
 
@@ -19,13 +20,13 @@ def distancia_km(lat1, lon1, lat2, lon2):
 def posibles_duplicados(
     dias: int = Query(90, ge=1, le=365),
     limite: int = Query(10, ge=1, le=100),
-    usuario: dict = Depends(usuario_actual)
+    usuario: dict = Depends(requerir_permiso("datasets:read"))
 ):
     u = aliased(SeismicEvent)
     i = aliased(SeismicEvent)
     fu = aliased(DataSource)
     fi = aliased(DataSource)
-    desde = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=dias)
+    desde = datetime.now(timezone.utc) - timedelta(days=dias)
     with Session(engine) as db:
         consulta = (
             select(
@@ -60,8 +61,8 @@ def posibles_duplicados(
             continue
         propuestas.append({
             "usgs_id": str(r.uid), "igp_id": str(r.iid),
-            "fecha_usgs_utc": r.uf.isoformat() + "Z",
-            "fecha_igp_utc": r.ifecha.isoformat() + "Z",
+            "fecha_usgs_utc": utc_iso(r.uf),
+            "fecha_igp_utc": utc_iso(r.ifecha),
             "diferencia_segundos": round(tiempo, 1),
             "distancia_km": round(distancia, 2),
             "diferencia_magnitud": round(diferencia_mag, 2),

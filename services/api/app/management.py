@@ -1,9 +1,11 @@
+from app.time_utils import utc_iso, as_utc
 from collections import defaultdict
 from datetime import datetime, timezone
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
-from sqlalchemy import delete, func, or_, select
+from sqlalchemy import delete, func, or_, select, text
+from typing import Literal
 from sqlalchemy.orm import Session
 from app.access import requerir_permiso
 from app.database import engine
@@ -16,8 +18,38 @@ router = APIRouter(prefix="/api/v1/management", tags=["Administracion empresaria
 class CambioRoles(BaseModel):
     roles: list[str] = Field(min_length=1, max_length=8)
 
+class CambioEstadoUsuario(BaseModel):
+    estado: Literal['active', 'inactive']
+
+
+@router.patch('/users/{user_id}/status')
+def cambiar_estado_usuario(user_id: UUID, datos: CambioEstadoUsuario,
+                            usuario=Depends(requerir_permiso('users:manage'))):
+    try:
+        actor = UUID(str(usuario['id']))
+    except (KeyError, ValueError, TypeError):
+        raise HTTPException(403, 'Se requiere identidad administrativa verificable') from None
+    if user_id == actor and datos.estado == 'inactive':
+        raise HTTPException(409, 'No puedes desactivar tu propia cuenta')
+    with Session(engine) as db:
+        db.execute(text('SELECT pg_advisory_xact_lock(2026101804)'))
+        own = db.get(User, actor)
+        is_admin = db.scalar(select(UserRole.user_id).join(Role, Role.id == UserRole.role_id)
+                             .where(UserRole.user_id == actor, Role.name == 'Administrador'))
+        if own is None or own.status != 'active' or is_admin is None:
+            raise HTTPException(403, 'Se requiere un administrador activo')
+        target = db.get(User, user_id, with_for_update=True)
+        if target is None:
+            raise HTTPException(404, 'Usuario no encontrado')
+        before = target.status
+        target.status = datos.estado
+        db.add(AuditLog(actor_id=actor, action='users.status.update', entity_type='user', entity_id=str(user_id),
+                        before_json={'estado':before}, after_json={'estado':datos.estado}))
+        db.commit()
+        return {'usuario_id':str(user_id), 'estado':datos.estado}
+
 def fecha(valor):
-    return valor.isoformat() if valor is not None else None
+    return utc_iso(valor)
 
 @router.get("/users")
 def usuarios(usuario=Depends(requerir_permiso("users:read"))):
@@ -62,6 +94,8 @@ def asignar_roles(user_id: UUID, datos: CambioRoles,
         raise HTTPException(409, "No puedes modificar tus propios roles")
     with Session(engine) as db:
         administrador = db.get(User, actor)
+        db.execute(text('SELECT pg_advisory_xact_lock(2026101804)'))
+        db.refresh(administrador) if administrador is not None else None
         admin_real = db.scalar(select(func.count()).select_from(UserRole)
             .join(Role, Role.id == UserRole.role_id)
             .where(UserRole.user_id == actor, Role.name == "Administrador"))
@@ -119,6 +153,33 @@ def auditoria(
             "fecha_utc": fecha(a.occurred_at),
             "correlacion": a.correlation_id
         } for a, nombre in filas]}
+
+
+@router.get('/audit/export')
+def exportar_auditoria(busqueda: str = Query('', max_length=80), dias: int = Query(365, ge=1, le=365),
+                       usuario=Depends(requerir_permiso('audit:read'))):
+    import csv
+    import io
+    from datetime import timedelta
+    from fastapi.responses import Response
+    from app.reports import texto_seguro, registrar_descarga
+    cutoff = datetime.now(timezone.utc)
+    conditions = [AuditLog.occurred_at.between(cutoff-timedelta(days=dias), cutoff)]
+    if busqueda.strip():
+        pattern = '%' + busqueda.strip() + '%'
+        conditions.append(or_(AuditLog.action.ilike(pattern), AuditLog.entity_type.ilike(pattern)))
+    with Session(engine) as db:
+        rows = db.execute(select(AuditLog, User.full_name).outerjoin(User, User.id == AuditLog.actor_id)
+                          .where(*conditions).order_by(AuditLog.occurred_at.desc()).limit(10001)).all()
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['fecha_corte_utc','solicitante_id','filtro_dias','filtro_busqueda','limitado','fecha_operacion_utc','actor','accion','entidad','id_entidad','correlacion'])
+    for entry, name in rows[:10000]:
+        values = [fecha(cutoff),usuario.get('id'),dias,busqueda,len(rows)>10000,fecha(entry.occurred_at),name or 'Sistema',entry.action,entry.entity_type,entry.entity_id,entry.correlation_id]
+        writer.writerow([texto_seguro(value) if isinstance(value,str) else value for value in values])
+    registrar_descarga(usuario, 'auditoria.csv', dias, False, None)
+    return Response('\ufeff'+output.getvalue(), media_type='text/csv; charset=utf-8',
+                    headers={'Content-Disposition':'attachment; filename=sismoia_auditoria.csv', 'Cache-Control':'no-store'})
 
 @router.get("/system")
 def sistema(usuario=Depends(requerir_permiso("audit:read"))):

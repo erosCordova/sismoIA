@@ -2,6 +2,7 @@ from sqlalchemy import inspect
 
 from app.database import engine
 from app.delivery_models import AlertDelivery
+from app import alert_models  # registra la tabla referenciada por alert_id
 
 tabla = AlertDelivery.__table__
 

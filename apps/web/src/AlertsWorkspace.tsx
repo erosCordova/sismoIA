@@ -23,6 +23,7 @@ type Regla = {
   profundidad_maxima: number | null;
   solo_peru: boolean;
   habilitada: boolean;
+  fuente_permitida: string | null;
 };
 
 type Alerta = {
@@ -443,7 +444,7 @@ export default function AlertsWorkspace({
     void ejecutar(
       () => api("/rules", {
         method: "POST",
-        body: JSON.stringify(payload(formulario))
+        body: JSON.stringify({...payload(formulario), fuente_permitida: fuenteSimulacion || null})
       }),
       "Regla creada. Revisa su estado antes de evaluar eventos."
     );
@@ -451,7 +452,7 @@ export default function AlertsWorkspace({
     setSimulacion(null);
   }
 
-  function simular(f: Formulario) {
+  function simular(f: Formulario, fuentePermitida = fuenteSimulacion) {
     if (!validarFormulario(f)) return;
 
     setSimulacion(null);
@@ -465,7 +466,7 @@ export default function AlertsWorkspace({
             body: JSON.stringify({
               ...payload(f),
               dias: Number(f.dias),
-              fuente_permitida: fuenteSimulacion || null
+              fuente_permitida: fuentePermitida || null
             })
           }
         );
@@ -504,7 +505,7 @@ export default function AlertsWorkspace({
 
   function evaluar() {
     if (!window.confirm(
-      "¿Evaluar los últimos 7 días y crear alertas internas " +
+      "¿Evaluar los eventos de las últimas 3 horas y crear alertas internas " +
       "pendientes de revisión para las coincidencias nuevas? " +
       "No se enviarán mensajes externos."
     )) return;
@@ -730,7 +731,7 @@ export default function AlertsWorkspace({
                 </label>
 
                 <label>
-                  Fuente de la simulación
+                  Fuente permitida de la regla y simulación
                   <select
                     value={fuenteSimulacion}
                     onChange={e =>
@@ -744,8 +745,7 @@ export default function AlertsWorkspace({
                     <option value="USGS">USGS</option>
                   </select>
                   <small>
-                    Este filtro solo se aplica a la
-                    simulación. No se guarda en la regla.
+                    La misma fuente se usa al simular y al guardar la regla.
                   </small>
                 </label>
 
@@ -812,7 +812,7 @@ export default function AlertsWorkspace({
               </div>
 
               <p className="ops-chart-foot">
-                Fuente simulada:{" "}
+                Fuente permitida:{" "}
                 {simulacion.fuente_permitida ||
                   "Todas las fuentes"}
                 {" · "}
@@ -821,7 +821,7 @@ export default function AlertsWorkspace({
                 {" · "}
                 Advertencias:{" "}
                 {simulacion.por_severidad?.warning ?? 0}.
-                Este filtro no se persiste.
+                Al guardar la regla se conserva esta condición.
               </p>
 
               {simulacion.consulta_limitada && (
@@ -882,6 +882,7 @@ export default function AlertsWorkspace({
                     <th>Magnitud</th>
                     <th>Profundidad</th>
                     <th>Zona</th>
+                    <th>Fuente</th>
                     <th>Estado</th>
                     <th>Acciones</th>
                   </tr>
@@ -910,6 +911,8 @@ export default function AlertsWorkspace({
                           : "Mundo"}
                       </td>
 
+                      <td>{r.fuente_permitida || "Todas"}</td>
+
                       <td>
                         <span className={
                           r.habilitada
@@ -937,7 +940,7 @@ export default function AlertsWorkspace({
                                     : String(r.profundidad_maxima),
                                 solo_peru: r.solo_peru,
                                 dias: formulario.dias
-                              })}
+                              }, r.fuente_permitida || "")}
                             >
                               Simular
                             </button>
@@ -1395,10 +1398,7 @@ export default function AlertsWorkspace({
                     ],
                     [
                       "Estado de envío",
-                      detalle.entrega.estado ===
-                        "no_implementada"
-                        ? "No implementado"
-                        : detalle.entrega.estado
+                        detalle.entrega.estado
                     ],
                     [
                       "Destinatarios",

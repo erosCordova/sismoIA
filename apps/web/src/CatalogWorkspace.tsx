@@ -1,4 +1,5 @@
 import SismoiaWorldCamera from "./SismoiaWorldCamera";
+import {apiError} from "./apiErrors";
 import {
   useContext, useEffect, useMemo, useRef, useState,
   type FormEvent
@@ -197,7 +198,7 @@ export default function CatalogWorkspace({
         );
 
         if (!respuesta.ok) {
-          throw Error(`No se pudieron cargar los eventos (HTTP ${respuesta.status})`);
+          throw Error(await apiError(respuesta, "No se pudieron cargar los eventos"));
         }
 
         const resultado: Resultado = await respuesta.json();
@@ -243,7 +244,7 @@ export default function CatalogWorkspace({
         );
 
         if (!respuesta.ok) {
-          throw Error(`No se pudo consultar el detalle (HTTP ${respuesta.status})`);
+          throw Error(await apiError(respuesta, "No se pudo consultar el detalle"));
         }
 
         const resultado: Evento = await respuesta.json();

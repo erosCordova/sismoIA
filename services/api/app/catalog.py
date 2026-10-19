@@ -10,6 +10,7 @@ import json
 from sqlalchemy.orm import Session
 
 from app.access import requerir_permiso
+from app.time_utils import next_utc_date
 from app.database import engine
 from app.models import DataSource, SeismicEvent
 
@@ -73,7 +74,7 @@ def filtros_catalogo(
     if fecha_hasta:
         condiciones.append(
             SeismicEvent.occurred_at < datetime.combine(
-                fecha_hasta + timedelta(days=1),
+                next_utc_date(fecha_hasta),
                 time.min,
                 tzinfo=timezone.utc,
             )
@@ -300,9 +301,9 @@ def detalle_evento(evento_id):
             "fuente_organizacion": fuente.organization,
             "fuente_url": fuente.base_url,
             "region": None,
-            "huella_origen_calculada": sha256(
-                f"{fuente.name}:{evento.external_id}".encode()
-            ).hexdigest(),
+            "huella_origen_calculada": evento.origin_hash,
+            "tipo_huella": "sha256_contenido_proveedor" if evento.origin_hash else "sin_huella_original; pendiente resincronizacion",
+            "ultima_revision_utc": fecha_utc(evento.last_updated_at),
         })
 
         return resultado

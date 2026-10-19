@@ -3,6 +3,7 @@
 
 from datetime import datetime, timezone
 from math import exp
+from fastapi import HTTPException
 
 import numpy as np
 from sklearn.metrics import brier_score_loss
@@ -103,7 +104,7 @@ def generar_pronostico():
         )
 
         if len(observados) == 0:
-            raise RuntimeError(
+            raise HTTPException(409,
                 "No hay muestras de prueba para "
                 f"{horizonte} dias"
             )
@@ -153,6 +154,11 @@ def generar_pronostico():
         }
 
     return {
+        "estado_revision": "laboratorio_sin_aprobacion_publicacion",
+        "publicado": False,
+        "version_metodo": "POISSON-ZONAS-1.0",
+        "periodo_tasa_inicio": INICIO.isoformat(),
+        "periodo_tasa_fin_exclusivo": FIN_ENTRENAMIENTO.isoformat(),
         "modelo": "tasa_historica_poisson_por_zona",
         "estado": (
             "DATOS_DESACTUALIZADOS"
