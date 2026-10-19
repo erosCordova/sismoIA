@@ -7,10 +7,14 @@ import smtplib
 from email.message import EmailMessage
 from email.utils import parseaddr
 from uuid import UUID
+from datetime import datetime, timedelta, timezone
+from dotenv import dotenv_values
+from app.configuration import ENV_FILE
+from app.time_utils import as_utc
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
 from app.access import requerir_permiso
@@ -29,7 +33,15 @@ class Solicitud(BaseModel):
     recipient_user_id: UUID
 
 
+def valores_correo():
+    file_values = dotenv_values(ENV_FILE) if ENV_FILE.is_file() else {}
+    names = ('SISMOIA_EMAIL_ENABLED','SISMOIA_SMTP_HOST','SISMOIA_SMTP_USER','SISMOIA_SMTP_PASSWORD',
+             'SISMOIA_SMTP_FROM','SISMOIA_SMTP_SECURITY','SISMOIA_SMTP_PORT')
+    return {name: os.environ.get(name, file_values.get(name) or '') for name in names}
+
+
 def configuracion():
+    values = valores_correo()
     nombres = (
         "SISMOIA_SMTP_HOST",
         "SISMOIA_SMTP_USER",
@@ -39,11 +51,10 @@ def configuracion():
 
     return {
         "habilitado": (
-            os.getenv("SISMOIA_EMAIL_ENABLED", "false")
-            .lower() == "true"
+            values['SISMOIA_EMAIL_ENABLED'].strip().lower() == "true"
         ),
         "configurado": all(
-            os.getenv(nombre, "").strip()
+            values[nombre].strip()
             for nombre in nombres
         )
     }
@@ -121,26 +132,24 @@ def enviar_smtp(destino, asunto, cuerpo):
     if not estado["configurado"]:
         raise RuntimeError("SMTP_INCOMPLETO")
 
-    servidor = os.environ["SISMOIA_SMTP_HOST"]
-    usuario = os.environ["SISMOIA_SMTP_USER"]
-    clave = os.environ["SISMOIA_SMTP_PASSWORD"]
+    values = valores_correo()
+    servidor = values["SISMOIA_SMTP_HOST"]
+    usuario = values["SISMOIA_SMTP_USER"]
+    clave = values["SISMOIA_SMTP_PASSWORD"]
     remitente = correo_valido(
-        os.environ["SISMOIA_SMTP_FROM"]
+        values["SISMOIA_SMTP_FROM"]
     )
 
     destino = correo_valido(destino)
 
-    modo = os.getenv(
-        "SISMOIA_SMTP_SECURITY", "ssl"
-    ).lower()
+    modo = (values["SISMOIA_SMTP_SECURITY"] or "ssl").lower()
 
     if modo not in {"ssl", "starttls"}:
         raise RuntimeError("SMTP_SEGURIDAD_INVALIDA")
 
-    puerto = int(os.getenv(
-        "SISMOIA_SMTP_PORT",
-        "465" if modo == "ssl" else "587"
-    ))
+    puerto = int(values["SISMOIA_SMTP_PORT"] or ("465" if modo == "ssl" else "587"))
+    if not 1 <= puerto <= 65535:
+        raise RuntimeError('SMTP_PUERTO_INVALIDO')
 
     mensaje = EmailMessage()
     mensaje["From"] = remitente
@@ -335,6 +344,11 @@ def enviar(
                 409,
                 "Ya se registro un envio para este destinatario"
             )
+        failed, last = db.execute(select(func.count(AlertAction.id), func.max(AlertAction.created_at))
+                                 .where(AlertAction.alert_id == alerta.id, AlertAction.action == 'email.failed',
+                                        AlertAction.details.like(f'user:{destino.id};%'),
+                                        AlertAction.created_at >= datetime.now(timezone.utc)-timedelta(hours=24))).one()
+        permitir_reintento(failed, last)
 
         asunto, cuerpo = mensaje_sismico(
             alerta, evento, fuente, destino
@@ -384,3 +398,14 @@ def enviar(
                 "Notificacion informativa, no oficial"
             )
         }
+
+
+def permitir_reintento(failed, last, now=None):
+    if failed >= 3:
+        raise HTTPException(409, 'Se alcanzo el limite de 3 intentos fallidos en 24 horas. Revisa la configuracion y espera a que se libere ese limite antes de reintentar.')
+    if failed and last:
+        current = now or datetime.now(timezone.utc)
+        remaining = (as_utc(last)+timedelta(seconds=60*2**(failed-1))-as_utc(current)).total_seconds()
+        if remaining > 0:
+            delay = max(1, int(remaining)+1)
+            raise HTTPException(429, f'Espera {delay} segundos antes de reintentar el envio', headers={'Retry-After':str(delay)})

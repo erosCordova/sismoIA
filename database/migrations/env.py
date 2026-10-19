@@ -24,6 +24,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "services" / "api")
 from app.database import settings
 config.set_main_option("sqlalchemy.url", settings.database_url.replace("%", "%%"))
 from app.models import Base
+from app import alert_models, governance_models, delivery_models  # noqa: F401
+from app import ingestion  # noqa: F401
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,

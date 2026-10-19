@@ -1,14 +1,17 @@
+from app.time_utils import utc_iso, as_utc
 
 from datetime import date, datetime, timedelta, timezone
 from math import exp
-from uuid import UUID
+import os
+from fastapi import HTTPException
+from app.models import DataSource
 
 import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import brier_score_loss
 from sqlalchemy import MetaData, Table, select
 
-from app.database import engine
+from app.database import engine, settings
 
 
 INICIO = date(2010, 1, 1)
@@ -16,15 +19,20 @@ FIN_ENTRENAMIENTO = date(2024, 1, 1)
 FIN_VALIDACION = date(2025, 1, 1)
 FIN_PRUEBA = date(2026, 1, 1)
 
-FUENTE_HISTORICA = UUID(
-    "5cdc88cd-fc4a-4686-ab9a-0df32cda60dc"
-)
+def fuente_historica():
+    nombre = os.getenv("SISMOIA_FORECAST_SOURCE_NAME", settings.sismoia_forecast_source_name).strip()
+    if not nombre:
+        raise HTTPException(409, "La exploracion por zonas requiere una fuente historica revisada. Configura IGP o USGS en el backend y revisa su cobertura antes de calcular probabilidades.")
+    if nombre not in ("IGP", "USGS"):
+        raise HTTPException(409, "La fuente historica debe ser IGP o USGS")
+    return select(DataSource.id).where(DataSource.name == nombre).scalar_subquery()
 
 UMBRALES = (7, 30)
 ZONAS = 12
 
 
 def cargar_historial():
+    source_id = fuente_historica()
     tabla = Table(
         "seismic_events",
         MetaData(),
@@ -38,8 +46,10 @@ def cargar_historial():
             tabla.c.longitude
         )
         .where(
-            tabla.c.source_id == FUENTE_HISTORICA,
+            tabla.c.source_id == source_id,
+            tabla.c.occurred_at >= datetime.combine(INICIO, datetime.min.time(), tzinfo=timezone.utc),
             tabla.c.magnitude >= 4.0,
+            tabla.c.occurred_at <= datetime.now(timezone.utc),
             tabla.c.latitude.between(-19.0, 1.0),
             tabla.c.longitude.between(-83.5, -68.0)
         )
@@ -54,11 +64,14 @@ def cargar_historial():
         conexion.rollback()
 
     if not registros:
-        raise RuntimeError(
-            "No hay registros historicos suficientes"
-        )
+        raise HTTPException(409, "No hay eventos M >= 4 en la fuente historica configurada")
 
-    ultima_fecha = max(r[0] for r in registros)
+    # No asumir que los anos ausentes son anos completos sin sismos.
+    years = {as_utc(row[0]).year for row in registros}
+    if not set(range(INICIO.year, FIN_PRUEBA.year)).issubset(years):
+        raise HTTPException(409, "El historial no cubre todos los anos 2010-2025 requeridos por este metodo. Revisa la cobertura antes de calcular probabilidades por zonas.")
+
+    ultima_fecha = as_utc(max(r[0] for r in registros))
     ultimo_dia = ultima_fecha.date()
 
     total_dias = (ultimo_dia - INICIO).days + 1
@@ -69,7 +82,7 @@ def cargar_historial():
     )
 
     for fecha_evento, latitud, longitud in registros:
-        dia = fecha_evento.date()
+        dia = as_utc(fecha_evento).date()
         indice_dia = (dia - INICIO).days
 
         if not (0 <= indice_dia < total_dias):

@@ -1,5 +1,7 @@
 # SISMOIA Enterprise
 
+Nota del 18/10/2026: este registro corresponde al estado anterior. La verificacion posterior y sus limites estan documentados en MEJORAS_PLAN_DESARROLLO.md; no equivale a certificar cumplimiento integral del MVP.
+
 ## Informe de validación automatizada
 
 Fecha: 2026-10-17 18:51 UTC

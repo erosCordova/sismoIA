@@ -1,3 +1,4 @@
+from app.time_utils import utc_iso, as_utc
 """Versiones, experimentos y aprobación auditada de ML."""
 
 
@@ -32,13 +33,13 @@ import numpy as np
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from sqlalchemy import select
 
 from sqlalchemy.exc import IntegrityError
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, defer
 
 
 
@@ -151,6 +152,7 @@ class NuevoExperimento(BaseModel):
 
 
 class Decision(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
 
     decision: Literal["approved", "rejected"]
 
@@ -348,7 +350,7 @@ def version_json(d):
 
         "manifest": d.manifest,
 
-        "creada_utc": d.created_at.isoformat(),
+        "creada_utc": utc_iso(d.created_at),
 
         "creada_por": (
 
@@ -360,7 +362,7 @@ def version_json(d):
 
         "revisada_utc": (
 
-            d.reviewed_at.isoformat()
+            utc_iso(d.reviewed_at)
 
             if d.reviewed_at else None
 
@@ -402,7 +404,7 @@ def experimento_json(e):
 
         "artefacto_bytes": len(e.artifact),
 
-        "creada_utc": e.created_at.isoformat(),
+        "creada_utc": utc_iso(e.created_at),
 
         "creada_por": (
 
@@ -414,7 +416,7 @@ def experimento_json(e):
 
         "revisada_utc": (
 
-            e.reviewed_at.isoformat()
+            utc_iso(e.reviewed_at)
 
             if e.reviewed_at else None
 
@@ -465,282 +467,42 @@ def auditar(
 
 
 def construir_snapshot(datos):
-
-    if (
-
-        datos.fecha_desde
-
-        and datos.fecha_hasta
-
-        and datos.fecha_desde > datos.fecha_hasta
-
-    ):
-
-        raise HTTPException(
-
-            422, "La fecha inicial supera la final"
-
-        )
-
-
-
-    origen = obtener_dataset(
-
-        datos.fuente,
-
-        datos.peru,
-
-        datos.fecha_desde,
-
-        datos.fecha_hasta,
-
-        limite=datos.limite + 1
-
-    )
-
-
-
+    from app.ml_data import temporal_split
+    if datos.fecha_desde and datos.fecha_hasta and datos.fecha_desde > datos.fecha_hasta:
+        raise HTTPException(422, "La fecha inicial supera la final")
+    origen = obtener_dataset(datos.fuente, datos.peru, datos.fecha_desde, datos.fecha_hasta, limite=datos.limite + 1)
     limitado = len(origen) > datos.limite
-
     origen = origen[:datos.limite]
-
-
-
-    estados = Counter(
-
-        r["estado_calidad"] for r in origen
-
-    )
-
-
-
-    banderas = Counter(
-
-        bandera
-
-        for r in origen
-
-        for bandera in r["banderas"]
-
-    )
-
-
-
-    filas = [
-
-        dict(r)
-
-        for r in origen
-
-        if (
-
-            not datos.solo_validos
-
-            or r["estado_calidad"] == "VALIDO"
-
-        )
-
-    ]
-
-
-
-    if datos.objetivo == "profundidad_km":
-
-        filas = [
-
-            r for r in filas
-
-            if r["profundidad_km"] is not None
-
-        ]
-
-
-
-    filas.sort(
-
-        key=lambda r: (
-
-            r["fecha_utc"], r["id"]
-
-        )
-
-    )
-
-
-
-    if len(filas) < 40:
-
-        raise HTTPException(
-
-            422,
-
-            "Se necesitan al menos 40 filas preparadas"
-
-        )
-
-
-
-    corte = max(
-
-        1,
-
-        min(
-
-            len(filas) - 1,
-
-            int(len(filas) * 0.8)
-
-        )
-
-    )
-
-
-
-    profundidades_train = [
-
-        r["profundidad_km"]
-
-        for r in filas[:corte]
-
-        if (
-
-            r["profundidad_km"] is not None
-
-            and math.isfinite(r["profundidad_km"])
-
-        )
-
-    ]
-
-
-
-    mediana_train = (
-
-        median(profundidades_train)
-
-        if profundidades_train
-
-        else None
-
-    )
-
-
-
-    for i, fila in enumerate(filas):
-
-        fila["particion"] = (
-
-            "entrenamiento"
-
-            if i < corte
-
-            else "validacion"
-
-        )
-
-
-
-        fila["profundidad_imputada"] = False
-
-
-
-        if (
-
-            datos.imputar_profundidad
-
-            and datos.objetivo != "profundidad_km"
-
-            and fila["profundidad_km"] is None
-
-            and mediana_train is not None
-
-        ):
-
-            fila["profundidad_km"] = mediana_train
-
-            fila["profundidad_imputada"] = True
-
-
-
+    estados = Counter(r["estado_calidad"] for r in origen)
+    banderas = Counter(b for r in origen for b in r["banderas"])
+    filas = [dict(r) for r in origen if r["estado_calidad"] in (("VALIDO",) if datos.solo_validos else ("VALIDO", "INCOMPLETO"))]
+    filas = [r for r in filas if r.get(datos.objetivo) is not None and math.isfinite(r[datos.objetivo])]
+    if not datos.imputar_profundidad:
+        filas = [r for r in filas if r.get("profundidad_km") is not None]
+    train, test = temporal_split(filas, min_train=40, min_test=8)
+    # Garantizar que tambien es viable la seleccion cronologica interna.
+    temporal_split(train, min_train=30, min_test=8)
+    for partition, rows in (("entrenamiento", train), ("validacion", test)):
+        for row in rows:
+            row["particion"] = partition
+            row["profundidad_imputada"] = False
+    filas = train + test
     manifest = {
-
-        "fuente": datos.fuente,
-
-        "peru": datos.peru,
-
-        "fecha_desde": (
-
-            str(datos.fecha_desde)
-
-            if datos.fecha_desde else None
-
-        ),
-
-        "fecha_hasta": (
-
-            str(datos.fecha_hasta)
-
-            if datos.fecha_hasta else None
-
-        ),
-
-        "objetivo": datos.objetivo,
-
-        "solo_validos": datos.solo_validos,
-
-        "imputar_profundidad": (
-
-            datos.imputar_profundidad
-
-        ),
-
-        "limite": datos.limite,
-
-        "muestra_limitada": limitado,
-
-        "total_consultado": len(origen),
-
-        "total_seleccionado": len(filas),
-
-        "entrenamiento": corte,
-
-        "validacion": len(filas) - corte,
-
-        "imputacion_calculada_solo_train": (
-
-            mediana_train
-
-        ),
-
-        "estados_calidad": dict(estados),
-
-        "banderas": dict(banderas),
-
-        "reglas": "SISMOIA_DATASET_SNAPSHOT_V1",
-
-        "nota": (
-
-            "Instantánea persistente de registros "
-
-            "observados. No representa una "
-
-            "predicción anticipada."
-
-        )
-
+        "fuente": datos.fuente, "peru": datos.peru,
+        "fecha_desde": str(datos.fecha_desde) if datos.fecha_desde else None,
+        "fecha_hasta": str(datos.fecha_hasta) if datos.fecha_hasta else None,
+        "objetivo": datos.objetivo, "solo_validos": datos.solo_validos,
+        "imputar_profundidad": datos.imputar_profundidad,
+        "imputacion": "Ajustada dentro del pipeline de cada particion; snapshot conserva nulos",
+        "limite": datos.limite, "muestra_limitada": limitado,
+        "total_consultado": len(origen), "total_seleccionado": len(filas),
+        "entrenamiento": len(train), "validacion": len(test),
+        "separacion_minima_segundos": 120,
+        "estados_calidad": dict(estados), "banderas": dict(banderas),
+        "reglas": "SISMOIA_DATASET_SNAPSHOT_V2",
+        "nota": "Instantanea persistente de eventos observados; no pronostica futuros sismos."
     }
-
-
-
-    return (
-
-        manifest,
-
-        filas,
-
-        firma_snapshot(manifest, filas)
-
-    )
+    return manifest, filas, firma_snapshot(manifest, filas)
 
 
 
@@ -775,6 +537,8 @@ def listar_datasets(
         items = db.scalars(
 
             select(DatasetVersion)
+
+            .options(defer(DatasetVersion.snapshot))
 
             .order_by(
 
@@ -1151,6 +915,8 @@ def listar_experimentos(
         items = db.scalars(
 
             select(ExperimentRun)
+
+            .where(ExperimentRun.algorithm.in_(("regresion", "clasificacion")))
 
             .order_by(
 
@@ -1815,6 +1581,13 @@ def predecir_experimento(
                 else "Magnitud menor de 4"
 
             )
+            if hasattr(modelo, "predict_proba"):
+                clases = modelo.classes_.tolist()
+                probabilidades = modelo.predict_proba(matriz)[0]
+                resultado["probabilidad_clase_positiva"] = float(probabilidades[clases.index(1)]) if 1 in clases else 0.0
+                resultado["probabilidad_calibrada"] = False
+                resultado["nota_probabilidad"] = "Confianza estadistica de clasificacion de un registro observado, sin calibracion validada; no es probabilidad de un futuro sismo."
+
 
 
 

@@ -1,3 +1,4 @@
+from app.time_utils import utc_iso, as_utc
 from datetime import timezone
 from fastapi import APIRouter, Depends
 from sqlalchemy import func, select
@@ -5,15 +6,35 @@ from sqlalchemy.orm import Session
 from app.access import requerir_permiso
 from app.database import engine
 from app.models import DataSource, SeismicEvent
+from app.ingestion import IngestionRun
+from fastapi import Query
 
 router = APIRouter(prefix="/api/v1/sources", tags=["Fuentes de datos"])
+
+
+@router.get("/runs")
+def historial_ingesta(
+    limite: int = Query(30, ge=1, le=100),
+    usuario=Depends(requerir_permiso("sources:read"))
+):
+    with Session(engine) as db:
+        rows = db.execute(select(IngestionRun, DataSource.name)
+                          .join(DataSource, DataSource.id == IngestionRun.source_id)
+                          .order_by(IngestionRun.started_at.desc()).limit(limite)).all()
+        return {"ejecuciones": [{
+            "id": str(run.id), "fuente": name, "estado": run.status,
+            "inicio_utc": fecha(run.started_at), "fin_utc": fecha(run.finished_at),
+            "recibidos": run.records_seen, "insertados": run.records_inserted,
+            "actualizados": run.records_updated, "descartados": run.records_rejected,
+            "error": run.error_summary,
+        } for run, name in rows]}
 
 def fecha(valor):
     if valor is None:
         return None
     if valor.tzinfo is None:
         valor = valor.replace(tzinfo=timezone.utc)
-    return valor.isoformat()
+    return utc_iso(valor)
 
 @router.get("")
 def listar_fuentes(usuario=Depends(requerir_permiso("sources:read"))):

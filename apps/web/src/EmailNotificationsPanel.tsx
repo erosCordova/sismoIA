@@ -142,6 +142,7 @@ export default function EmailNotificationsPanel({
         y alertas previamente aprobadas.
         No constituye una alerta oficial.
       </p>
+      <p>Los reintentos son manuales: máximo tres fallos por alerta y destinatario en 24 horas, con espera creciente. Un envío SMTP aceptado no se reenvía automáticamente.</p>
 
       <p>
         Estado SMTP:{" "}

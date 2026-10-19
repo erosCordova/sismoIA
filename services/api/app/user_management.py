@@ -19,6 +19,8 @@ class UsuarioNuevo(BaseModel):
 @router.post("/users", status_code=201)
 def crear_usuario(datos: UsuarioNuevo, actor: dict = Depends(requerir_permiso("users:write"))):
     correo = datos.email.strip().lower()
+    if len(datos.nombre.strip()) < 2:
+        raise HTTPException(422, "El nombre debe contener al menos dos caracteres")
     if "@" not in correo or correo.startswith("@") or correo.endswith("@"):
         raise HTTPException(422, "Correo invalido")
     with Session(engine) as db:
@@ -29,10 +31,10 @@ def crear_usuario(datos: UsuarioNuevo, actor: dict = Depends(requerir_permiso("u
             raise HTTPException(409, "Correo ya registrado")
         usuario = User(full_name=datos.nombre.strip(), email=correo, password_hash=hash_password(datos.password), status="active")
         db.add(usuario)
-        db.flush()
-        db.add(UserRole(user_id=usuario.id, role_id=rol.id))
-        db.add(AuditLog(actor_id=UUID(actor["id"]), action="users.create", entity_type="users", entity_id=str(usuario.id), after_json={"email":correo,"rol":rol.name}))
         try:
+            db.flush()
+            db.add(UserRole(user_id=usuario.id, role_id=rol.id))
+            db.add(AuditLog(actor_id=UUID(actor["id"]), action="users.create", entity_type="users", entity_id=str(usuario.id), after_json={"email":correo,"rol":rol.name}))
             db.commit()
         except IntegrityError:
             db.rollback()

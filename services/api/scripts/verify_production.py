@@ -1,11 +1,12 @@
 import json
 import sys
 import time
+import os
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 
-FRONTEND = "https://sismo-ia.vercel.app"
-BACKEND = "https://sismoia.onrender.com"
+FRONTEND = os.getenv('SISMOIA_FRONTEND_URL', "https://sismo-ia.vercel.app").rstrip('/')
+BACKEND = os.getenv('SISMOIA_BACKEND_URL', "https://sismoia.onrender.com").rstrip('/')
 
 def consultar(url):
     ultimo_error = None
@@ -76,6 +77,9 @@ def verificar():
 
         print("BACKEND=OK", flush=True)
         print("RUTAS_TOTALES=", len(rutas), flush=True)
+        ready_status, ready_body = consultar(BACKEND + '/api/v1/ready')
+        if ready_status != 200 or json.loads(ready_body).get('schema') != 'complete':
+            raise RuntimeError('La base o el esquema no estan disponibles')
 
     except Exception as error:
         errores.append("BACKEND: " + str(error))
@@ -107,7 +111,7 @@ def verificar():
             print("DETALLE=", error, flush=True)
         return 1
 
-    print("RESULTADO=PRODUCCION_OPERATIVA", flush=True)
+    print("RESULTADO=COMPROBACIONES_BASICAS_OK_NO_SUSTITUYE_E2E", flush=True)
     return 0
 
 

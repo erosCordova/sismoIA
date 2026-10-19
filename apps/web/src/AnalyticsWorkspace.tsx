@@ -1,4 +1,5 @@
 import { useContext, useEffect, useState } from "react";
+import {apiError} from "./apiErrors";
 import {
   Bar, BarChart, CartesianGrid,
   Line, LineChart, Scatter, ScatterChart,
@@ -148,7 +149,7 @@ export default function AnalyticsWorkspace({
         );
 
         if (!r.ok) {
-          throw Error(`No se pudo consultar el análisis: HTTP ${r.status}`);
+          throw Error(await apiError(r, "No se pudo consultar el análisis"));
         }
 
         const resultado: Datos = await r.json();

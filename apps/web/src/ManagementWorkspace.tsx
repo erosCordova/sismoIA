@@ -1,10 +1,11 @@
-import { useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { Activity, RefreshCw, Save, ShieldCheck, Users } from "lucide-react";
 import { TokenContext, UsuarioContext } from "./AuthGate";
 import "./preparation.css";
 import "./management.css";
 import "./operations-enterprise.css";
 import UserCreateForm from "./UserCreateForm";
+import {apiError} from "./apiErrors";
 
 type Usuario = { id: string; nombre: string; email: string; estado: string; roles: string[]; creado_utc: string | null; ultimo_acceso_utc: string | null };
 type Rol = { id: string; nombre: string; descripcion: string | null; usuarios: number; permisos: string[] };
@@ -31,14 +32,14 @@ export default function ManagementWorkspace({ seccion }: { seccion: "usuarios" |
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
 
-  async function consultar(ruta: string, opciones: RequestInit = {}) {
+  const consultar = useCallback(async (ruta: string, opciones: RequestInit = {}) => {
     const r = await fetch(`/api/v1/management${ruta}`, {
       ...opciones, headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }
     });
     const resultado = await r.json();
     if (!r.ok) throw new Error(typeof resultado.detail === "string" ? resultado.detail : `HTTP ${r.status}`);
     return resultado;
-  }
+  }, [token]);
 
   useEffect(() => {
     if (!token) return;
@@ -60,7 +61,7 @@ export default function ManagementWorkspace({ seccion }: { seccion: "usuarios" |
     }
     void cargar();
     return () => { vigente = false; };
-  }, [token, seccion, buscarAuditoria, paginaAuditoria, revision]);
+  }, [token, seccion, buscarAuditoria, paginaAuditoria, revision, consultar]);
 
   function alternarRol(nombre: string, marcado: boolean) {
     setSeleccion(actual => marcado ? [...actual, nombre] : actual.filter(r => r !== nombre));
@@ -72,7 +73,7 @@ export default function ManagementWorkspace({ seccion }: { seccion: "usuarios" |
     try {
       await consultar(`/users/${id}/roles`, { method: "PATCH", body: JSON.stringify({ roles: seleccion }) });
       setEditando(null);
-      setMensaje("Roles actualizados y operación auditada. El usuario deberá volver a iniciar sesión.");
+      setMensaje("Roles actualizados y operación auditada. Los permisos se verifican en cada solicitud.");
       setRevision(n => n + 1);
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudieron actualizar los roles");
@@ -80,6 +81,30 @@ export default function ManagementWorkspace({ seccion }: { seccion: "usuarios" |
   }
 
   const numero = (n: number | undefined) => n === undefined ? "—" : n.toLocaleString("es-PE");
+
+  async function cambiarEstado(user:Usuario) {
+    setGuardando(true); setError(""); setMensaje("");
+    try {
+      await consultar(`/users/${user.id}/status`, {method:"PATCH", body:JSON.stringify({estado:user.estado === "active" ? "inactive" : "active"})});
+      setRevision(n => n+1); setMensaje("Estado actualizado y auditado. Las cuentas inactivas no pueden acceder a la API.");
+    } catch(e) { setError(e instanceof Error ? e.message : "No se pudo cambiar el estado"); }
+    finally { setGuardando(false); }
+  }
+
+  async function exportarAuditoria() {
+    setGuardando(true); setError("");
+    try {
+      const query = new URLSearchParams({busqueda:buscarAuditoria, dias:"365"});
+      const response = await fetch(`/api/v1/management/audit/export?${query}`, {headers:{Authorization:`Bearer ${token}`}});
+      if (!response.ok) throw Error(await apiError(response,"No se pudo exportar la auditoría"));
+      const url = URL.createObjectURL(await response.blob());
+      const anchor = document.createElement("a"); anchor.href=url; anchor.download="SISMOIA_auditoria.csv"; anchor.click();
+      window.setTimeout(() => URL.revokeObjectURL(url),1000);
+      setMensaje("Auditoría exportada: hasta 10 000 operaciones del último año, con el filtro de búsqueda actual.");
+      setRevision(n => n+1);
+    } catch(e) { setError(e instanceof Error ? e.message : "No se pudo exportar"); }
+    finally { setGuardando(false); }
+  }
   const fecha = (v: string | null) => v ? new Date(v).toLocaleString("es-PE", { timeZone: "America/Lima" }) : "Sin registro";
   const filtrados = usuarios.filter(u => `${u.nombre} ${u.email} ${u.roles.join(" ")}`.toLowerCase().includes(buscarUsuario.toLowerCase()));
 
@@ -87,7 +112,8 @@ export default function ManagementWorkspace({ seccion }: { seccion: "usuarios" |
     <header className="prep-header">
       <div><h2>{seccion === "usuarios" ? <Users size={23}/> : <ShieldCheck size={23}/>} {seccion === "usuarios" ? "Usuarios y roles" : "Auditoría y configuración"}</h2>
         <p>{seccion === "usuarios" ? "Administración de accesos y permisos por rol" : "Trazabilidad de operaciones y estado técnico de SISMOIA"}</p></div>
-      <div className="prep-actions"><button disabled={cargando} onClick={() => setRevision(n => n + 1)}><RefreshCw size={16}/> Actualizar</button></div>
+      <div className="prep-actions"><button disabled={cargando} onClick={() => setRevision(n => n + 1)}><RefreshCw size={16}/> Actualizar</button>
+        {seccion === "auditoria" && <button disabled={guardando} onClick={() => void exportarAuditoria()}>Exportar auditoría CSV</button>}</div>
     </header>
     {cargando && <p className="prep-loading">Consultando PostgreSQL...</p>}
     {error && <p className="prep-error" role="alert">{error}</p>}
@@ -107,11 +133,12 @@ export default function ManagementWorkspace({ seccion }: { seccion: "usuarios" |
           <thead><tr><th>Usuario</th><th>Estado</th><th>Roles</th><th>Último acceso</th><th>Administración</th></tr></thead>
           <tbody>{filtrados.map(u => <tr key={u.id}>
             <td><strong>{u.nombre}</strong><small className="management-small">{u.email}</small></td>
-            <td>{u.estado === "active" ? "Activo" : u.estado}</td>
+            <td>{u.estado === "active" ? "Activo" : u.estado === "inactive" ? "Inactivo" : u.estado}</td>
             <td>{u.roles.join(", ") || "Sin rol"}</td>
             <td>{fecha(u.ultimo_acceso_utc)}</td>
             <td>{administrador && u.id !== sesion?.id && <button disabled={guardando} onClick={() => { setEditando(u.id === editando ? null : u.id); setSeleccion(u.roles); }}>
-              {editando === u.id ? "Cerrar" : "Editar roles"}</button>}</td>
+              {editando === u.id ? "Cerrar" : "Editar roles"}</button>}
+              {administrador && u.id !== sesion?.id && <button disabled={guardando} onClick={() => void cambiarEstado(u)}>{u.estado === "active" ? "Desactivar cuenta" : "Activar cuenta"}</button>}</td>
           </tr>)}</tbody>
         </table></div>
         {editando && <div className="management-editor">
@@ -120,7 +147,7 @@ export default function ManagementWorkspace({ seccion }: { seccion: "usuarios" |
             <input type="checkbox" checked={seleccion.includes(r.nombre)} onChange={e => alternarRol(r.nombre, e.target.checked)}/>{r.nombre}
           </label>)}</div>
           <button disabled={guardando || !seleccion.length} onClick={() => void guardarRoles(editando)}><Save size={15}/> Guardar permisos</button>
-          <p>Los cambios requieren un nuevo inicio de sesión del usuario afectado.</p>
+          <p>Los permisos y el estado de la cuenta se verifican en cada solicitud.</p>
         </div>}
       </article>
       <article className="prep-card"><h3>Roles y permisos configurados</h3>
@@ -155,7 +182,7 @@ export default function ManagementWorkspace({ seccion }: { seccion: "usuarios" |
           <thead><tr><th>Fecha</th><th>Acción</th><th>Usuario responsable</th><th>Entidad</th><th>ID entidad</th></tr></thead>
           <tbody>{historial.map(a => <tr key={a.id}>
             <td>{fecha(a.fecha_utc)}</td><td>{a.accion}</td><td>{a.actor}</td><td>{a.entidad}</td>
-            <td className="management-identifier">{a.entidad_id || "—"}</td>
+            <td className="management-identifier">{a.entidad_id || "—"}<small>Correlación: {a.correlacion || "Sin identificador"}</small></td>
           </tr>)}</tbody>
         </table></div>
         <div className="ops-audit-pagination">

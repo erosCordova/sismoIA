@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+from app.request_context import RequestContextMiddleware
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -19,6 +21,7 @@ app = FastAPI(
 from app.security_controls import LoginRateLimitMiddleware
 
 app.add_middleware(LoginRateLimitMiddleware)
+app.add_middleware(RequestContextMiddleware)
 
 
 
@@ -38,7 +41,8 @@ app.add_middleware(
 
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
 
-    allow_headers=["Content-Type", "Authorization"],
+    allow_headers=["Content-Type", "Authorization", "X-Request-ID"],
+    expose_headers=["X-Request-ID", "X-Export-Total", "X-Export-Truncated"],
 
 )
 
@@ -74,7 +78,8 @@ def verificar_salud():
 
         "servicio": "SISMOIA API",
 
-        "base_datos": "pendiente",
+        "tipo": "liveness",
+        "base_datos": "no_verificada",
 
     }
 
@@ -87,6 +92,30 @@ from fastapi import HTTPException
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.database import comprobar_conexion
+
+
+@app.exception_handler(SQLAlchemyError)
+async def error_persistencia(request, error):
+    return JSONResponse(status_code=503, content={"detail": "Persistencia no disponible; verifica conexion y migraciones"})
+
+
+@app.get("/api/v1/ready")
+def verificar_disponibilidad():
+    from sqlalchemy import inspect
+    from app.database import engine
+    from app.models import Base
+    try:
+        schema = inspect(engine)
+        existentes = set(schema.get_table_names(schema="public"))
+        if not set(Base.metadata.tables).issubset(existentes):
+            raise HTTPException(503, "Esquema incompleto; aplica las migraciones")
+        for name, table in Base.metadata.tables.items():
+            columns = {column["name"] for column in schema.get_columns(name, schema="public")}
+            if not set(table.columns.keys()).issubset(columns):
+                raise HTTPException(503, "Columnas incompletas; aplica las migraciones")
+        return {"status": "ok", "tipo": "readiness", "database": "connected", "schema": "complete"}
+    except SQLAlchemyError:
+        raise HTTPException(503, "Base de datos no disponible") from None
 
 
 

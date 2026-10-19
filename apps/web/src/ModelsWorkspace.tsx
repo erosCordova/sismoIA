@@ -9,7 +9,9 @@ import {
 import {
   BrainCircuit, RefreshCw, FlaskConical
 } from "lucide-react";
-import {TokenContext} from "./AuthGate";
+import {TokenContext, UsuarioContext} from "./AuthGate";
+import {apiError} from "./apiErrors";
+import {RegressionResultsReading} from "./ModelResultReading";
 import "./preparation.css";
 import "./models.css";
 
@@ -39,6 +41,10 @@ type Registro = {
 };
 
 type Metricas = {
+  peru?: boolean;
+  origen?: string;
+  dataset_sha256?: string;
+  generado_utc?: string;
   entrenamiento: number;
   evaluacion: number;
   variables: string[];
@@ -108,7 +114,7 @@ const colores = [
 const numero = (v: number | null | undefined) =>
   v == null
     ? "—"
-    : v.toLocaleString("es-PE", {
+    : !Number.isFinite(v) ? "—" : v.toLocaleString("es-PE", {
         maximumFractionDigits: 4
       });
 
@@ -121,8 +127,12 @@ const fecha = (valor: string | null) =>
       })
     : "No registrada";
 
-export default function ModelsWorkspace() {
+export default function ModelsWorkspace({peru = false}: {peru?: boolean}) {
   const token = useContext(TokenContext);
+  const usuario = useContext(UsuarioContext);
+  const puedeEntrenar = Boolean(usuario?.permisos.some(p => p === "*" || p === "models:train"));
+  const [generando, setGenerando] = useState(false);
+  const [aviso, setAviso] = useState("");
   const [registro, setRegistro] = useState<Registro | null>(null);
   const [metricas, setMetricas] = useState<Metricas | null>(null);
   const [grupos, setGrupos] = useState<Grupos | null>(null);
@@ -141,8 +151,11 @@ export default function ModelsWorkspace() {
     const ctrl = new AbortController();
 
     async function cargar() {
+      setRegresion(null);
+      setErrorRegresion("");
       setCargando(true);
       setError("");
+      setAviso("");
 
       const headers = {
         Authorization: `Bearer ${token}`
@@ -169,7 +182,9 @@ export default function ModelsWorkspace() {
           rRegistro.status === "fulfilled" &&
           rRegistro.value.ok
         ) {
-          setRegistro(await rRegistro.value.json());
+          const resultado = await rRegistro.value.json();
+          setRegistro(resultado);
+          if (resultado.disponible === false) setAviso(resultado.detalle);
         } else {
           setRegistro(null);
         }
@@ -178,18 +193,27 @@ export default function ModelsWorkspace() {
           rMetricas.status === "fulfilled" &&
           rMetricas.value.ok
         ) {
-          setMetricas(await rMetricas.value.json());
+          const resultado = await rMetricas.value.json();
+          setMetricas(resultado.disponible === false ? null : resultado);
+          if (resultado.disponible === false) setAviso(resultado.detalle);
         } else {
           setMetricas(null);
+          setError(rMetricas.status === "fulfilled"
+            ? await apiError(rMetricas.value, "No se pudieron consultar los agrupamientos")
+            : "No se pudo conectar al servicio de agrupamientos.");
         }
 
         if (
           rGrupos.status === "fulfilled" &&
           rGrupos.value.ok
         ) {
-          setGrupos(await rGrupos.value.json());
+          const resultado = await rGrupos.value.json();
+          setGrupos(resultado.disponible === false ? null : resultado);
         } else {
           setGrupos(null);
+          setError(rGrupos.status === "fulfilled"
+            ? await apiError(rGrupos.value, "No se pudieron consultar los puntos")
+            : "No se pudo conectar al servicio de puntos.");
         }
 
         if (
@@ -214,7 +238,24 @@ export default function ModelsWorkspace() {
 
     void cargar();
     return () => ctrl.abort();
-  }, [token, conjunto, revision]);
+  }, [token, conjunto, revision, peru]);
+
+  async function generar() {
+    if (!token || !puedeEntrenar) return;
+    setGenerando(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/v1/ml/train-clustering?peru=${peru}`, {
+        method: "POST", headers: {Authorization: `Bearer ${token}`}
+      });
+      if (!response.ok) throw Error(await apiError(response, "No se pudieron generar los agrupamientos"));
+      setRevision(v => v + 1);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "No se pudo conectar con el backend.");
+    } finally {
+      setGenerando(false);
+    }
+  }
 
   async function evaluar() {
     if (!token) return;
@@ -225,7 +266,7 @@ export default function ModelsWorkspace() {
 
     try {
       const r = await fetch(
-        "/api/v1/ml/regression-validation",
+        `/api/v1/ml/regression-validation?peru=${peru}`,
         {
           headers: {
             Authorization: `Bearer ${token}`
@@ -234,9 +275,7 @@ export default function ModelsWorkspace() {
       );
 
       if (!r.ok) {
-        throw Error(
-          `No se pudo evaluar la regresión: HTTP ${r.status}`
-        );
+        throw Error(await apiError(r, "No se pudo evaluar la regresión"));
       }
 
       setRegresion(await r.json());
@@ -275,6 +314,10 @@ export default function ModelsWorkspace() {
         </div>
 
         <div className="prep-actions">
+          {puedeEntrenar && <button disabled={generando || cargando} onClick={() => void generar()}>
+            <BrainCircuit size={16}/>
+            {generando ? "Generando agrupamientos..." : "Generar agrupamientos con datos actuales"}
+          </button>}
           <button
             disabled={cargando}
             onClick={() => setRevision(v => v + 1)}
@@ -290,6 +333,12 @@ export default function ModelsWorkspace() {
         </p>
       )}
       {error && <p className="prep-error" role="alert">{error}</p>}
+      {aviso && <p className="ml-note" role="status">{aviso}</p>}
+      {metricas && typeof metricas.peru === "boolean" && <p className="ml-note" role="status">
+        Agrupamientos guardados para {metricas.peru ? "Perú" : "Mundo"}.
+        {" "}Generados: {fecha(metricas.generado_utc ?? null)}.
+        {metricas.peru !== peru && " El ámbito guardado es distinto del seleccionado. Genera nuevos agrupamientos para analizar el ámbito actual."}
+      </p>}
 
       <article className="prep-card">
         <h3>Registro de modelos existentes</h3>
@@ -361,6 +410,21 @@ export default function ModelsWorkspace() {
 
       {metricas ? (
         <>
+          <section className="result-reading" aria-label="Interpretación de los agrupamientos">
+            <h4>Qué encontraron los agrupamientos</h4>
+            <p>K-Means organizó los registros en <strong>{numero(metricas.kmeans.grupos)} grupos</strong> según su parecido en las variables utilizadas: {metricas.variables.join(", ")}. Cada color y número identifica un grupo; el grupo 1 no significa más peligro que el grupo 2.</p>
+            <p>K-Means aprendió con {numero(metricas.entrenamiento)} registros y se comprobó con otros {numero(metricas.evaluacion)} posteriores. La gráfica de barras muestra cuántos registros quedaron en cada grupo; una barra alta significa más registros, no mayor intensidad sísmica.</p>
+            <p><strong>DBSCAN dejó {numero(metricas.dbscan.ruido)} registros de entrenamiento sin grupo</strong> con la configuración actual. Los llama «ruido» porque no encontró suficientes vecinos similares; no significa que sean datos falsos ni sismos peligrosos.</p>
+            <p><strong>Cómo usarlo:</strong> identifica conjuntos de eventos parecidos y examina sus características y procedencia. Estos grupos sirven para explorar patrones del catálogo.</p>
+            <details><summary>Entender separación, cobertura y ruido</summary>
+              <dl>
+                <dt>Silhouette · Separación de grupos</dt><dd>Va de −1 a 1. Cerca de 1, los grupos están más separados; cerca de 0, se superponen; valores negativos sugieren asignaciones poco claras. No es un porcentaje de aciertos ni una medida de peligro. «—» indica que no pudo calcularse.</dd>
+                <dt>Entrenamiento frente a evaluación</dt><dd>Si la separación baja en evaluación, los patrones aprendidos se distinguen menos en los registros posteriores. Revisa también el tamaño de muestra y las variables.</dd>
+                <dt>Cobertura DBSCAN</dt><dd>Es el porcentaje de registros de entrenamiento que el algoritmo pudo incluir en algún grupo; el resto queda sin grupo. Una cobertura alta no garantiza agrupaciones útiles.</dd>
+                <dt>Epsilon</dt><dd>Define qué tan cerca deben estar dos registros para considerarlos vecinos en las variables escaladas. No equivale directamente a kilómetros.</dd>
+              </dl>
+            </details>
+          </section>
           <div className="prep-metrics">
             <article>
               <span>Entrenamiento K-Means</span>
@@ -389,7 +453,7 @@ export default function ModelsWorkspace() {
             <article>
               <span>Cobertura DBSCAN</span>
               <strong>
-                {numero(metricas.dbscan.cobertura * 100)}%
+                {numero(metricas.dbscan.cobertura == null ? null : metricas.dbscan.cobertura * 100)}%
               </strong>
             </article>
           </div>
@@ -425,7 +489,7 @@ export default function ModelsWorkspace() {
               {[
                 ["Grupos", metricas.dbscan.grupos],
                 ["Epsilon", metricas.dbscan.eps],
-                ["Ruido", metricas.dbscan.ruido],
+                ["Sin grupo (ruido)", metricas.dbscan.ruido],
                 [
                   "Silhouette sin ruido",
                   metricas.dbscan.silhouette_sin_ruido
@@ -456,6 +520,7 @@ export default function ModelsWorkspace() {
               </div>
 
               <select
+                aria-label="Registros que se muestran en la gráfica de grupos"
                 value={conjunto}
                 onChange={e => setConjunto(e.target.value)}
               >
@@ -510,8 +575,9 @@ export default function ModelsWorkspace() {
         </>
       ) : (
         <p className="prep-loading">
-          Las métricas de K-Means y DBSCAN no están disponibles
-          actualmente. Consulta el registro de artefactos.
+          Genera los agrupamientos con datos actuales para calcular
+          las métricas de K-Means y DBSCAN. Se guardan en el backend;
+          no se modifican los registros de Supabase.
         </p>
       )}
 
@@ -523,14 +589,14 @@ export default function ModelsWorkspace() {
               Comparación de regresión experimental
             </h3>
             <p>
-              Referencia histórica, Ridge y Random Forest.
+              Referencia histórica y regresión con selección interna independiente.
               Evaluación temporal 80/20.
             </p>
           </div>
 
           <button
             className="ml-run"
-            disabled={evaluando}
+            disabled={evaluando || !puedeEntrenar}
             onClick={() => void evaluar()}
           >
             <FlaskConical size={16}/>
@@ -598,7 +664,7 @@ export default function ModelsWorkspace() {
                       <td>
                         {m.modelo}
                         {m.modelo === regresion.mejor_mae &&
-                          " · Menor MAE"}
+                          " · Seleccionado en desarrollo"}
                       </td>
                       <td>{numero(m.mae)}</td>
                       <td>{numero(m.rmse)}</td>
@@ -609,9 +675,12 @@ export default function ModelsWorkspace() {
               </table>
             </div>
 
+            <RegressionResultsReading comparison={regresion.comparacion} target={regresion.variable_objetivo}/>
+
             <h3>Magnitud real frente a estimada</h3>
             <p>
               Muestra cronológica de hasta 60 eventos de validación.
+              {" "}La gráfica corresponde a {regresion.mejor_mae}, seleccionado en desarrollo.
             </p>
 
             <div className="prep-chart">

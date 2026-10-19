@@ -1,3 +1,4 @@
+from app.time_utils import utc_iso, as_utc
 """Bandeja interna auditada. No ejecuta envios externos."""
 
 from datetime import datetime, timezone
@@ -42,7 +43,7 @@ def identidad(usuario):
 
 
 def fecha(v):
-    return v.isoformat() if v else None
+    return utc_iso(v)
 
 
 def registrar(db, usuario, entrega, accion):

@@ -51,14 +51,8 @@ validos = sorted(
 if len(validos) < 10:
     raise RuntimeError("No hay suficientes registros validos")
 
-corte = int(len(validos) * 0.8)
-while corte < len(validos) and validos[corte]["fecha_utc"] == validos[corte - 1]["fecha_utc"]:
-    corte += 1
-if corte >= len(validos):
-    raise RuntimeError("No fue posible separar cronologicamente los registros")
-
-entrenamiento = validos[:corte]
-prueba = validos[corte:]
+from app.ml_data import temporal_split
+entrenamiento, prueba = temporal_split(validos, min_train=30, min_test=8)
 
 def guardar(nombre, filas):
     with (DESTINO / nombre).open("w", newline="", encoding="utf-8-sig") as archivo:

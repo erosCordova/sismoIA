@@ -1,5 +1,6 @@
 import math
 from collections import Counter
+from app.time_utils import utc_iso, next_utc_date
 from statistics import mean, median
 from fastapi import APIRouter, Depends, Query
 from app.access import requerir_permiso
@@ -121,7 +122,7 @@ def filtros_explorador(
     if fecha_hasta:
         condiciones.append(
             SeismicEvent.occurred_at < datetime.combine(
-                fecha_hasta + timedelta(days=1),
+                next_utc_date(fecha_hasta),
                 time.min,
                 tzinfo=timezone.utc,
             )
@@ -358,7 +359,7 @@ def explorador_estadistico(
         "agrupacion": agrupacion,
         "serie": [
             {
-                "fecha": fecha.isoformat(),
+                "fecha": utc_iso(fecha),
                 "cantidad": int(cantidad),
             }
             for fecha, cantidad in filas_tiempo
@@ -413,7 +414,7 @@ def explorador_estadistico(
             {
                 "magnitud": float(magnitud),
                 "profundidad": float(profundidad),
-                "fecha": fecha.isoformat(),
+                "fecha": utc_iso(fecha),
                 "fuente": nombre,
             }
             for magnitud, profundidad, fecha, nombre

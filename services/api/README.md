@@ -1,5 +1,7 @@
 # SISMOIA Enterprise - Backend
 
+Actualizacion 18/10/2026: la guia de instalacion y migraciones vigente esta en el README de la raiz y el estado de correcciones en docs/MEJORAS_PLAN_DESARROLLO.md. El plan de desarrollo es la referencia funcional principal.
+
 ## Proposito
 
 API empresarial para monitoreo sismico, analisis
@@ -20,11 +22,11 @@ React, TypeScript y Vite.
 
 Desde la carpeta services/api:
 
-    python -m uvicorn app.main:app --reload
+    python -m uvicorn app.main:app --reload --port 8011
 
 Documentacion interactiva:
 
-    http://127.0.0.1:8000/docs
+    http://127.0.0.1:8011/docs
 
 ## Configuracion
 
@@ -82,13 +84,14 @@ No existe envio externo automatico verificado.
 
 ## Base de datos
 
-Las migraciones se encuentran en migrations.
+Las migraciones vigentes se encuentran en database/migrations desde la raiz y se aplican con alembic upgrade head. Los scripts antiguos de services/api/migrations no completan por si solos el esquema actual.
 
 Antes de migrar produccion debe existir un
 respaldo verificable y un plan de recuperacion.
 
-Se comprobo una restauracion del esquema public
-en PostgreSQL aislado mediante Docker.
+La entrega anterior declaraba una restauracion aislada,
+pero no incluia evidencia verificable. Esa afirmacion
+no se considera una validacion operativa vigente.
 
 Los respaldos permanecen fuera del repositorio.
 

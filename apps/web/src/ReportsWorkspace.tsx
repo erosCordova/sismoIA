@@ -15,6 +15,7 @@ import {
 import "./preparation.css";
 import "./reporting.css";
 import "./operations-enterprise.css";
+import ModuleReports from "./ModuleReports";
 
 type Serie = {
   etiqueta: string;
@@ -404,6 +405,7 @@ export default function ReportsWorkspace({
           </p>
         </>
       )}
+      {puedeExportar && <ModuleReports peru={peru} dias={dias} fuente={fuente}/>}
     </section>
   );
 }

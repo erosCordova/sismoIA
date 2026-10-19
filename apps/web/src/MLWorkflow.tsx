@@ -1,4 +1,4 @@
-import GlobalForecastMap from "./GlobalForecastMap";
+import ZoneWorkspace from "./ZoneWorkspace";
 import {useState} from "react";
 import {Link} from "react-router-dom";
 
@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 
 import GovernancePanel from "./GovernancePanel";
-import SeismicForecastMap from "./SeismicForecastMap";
 import {MapPinned} from "lucide-react";
 import ModelsWorkspace from "./ModelsWorkspace";
 import SciencePanels from "./SciencePanels";
@@ -60,7 +59,7 @@ export default function MLWorkflow({peru}: Props) {
           onClick={() => setVista("pronosticos")}
         >
           <MapPinned size={18}/>
-          Pronósticos
+          Exploración por zonas
         </button>
 
         <button
@@ -91,19 +90,7 @@ export default function MLWorkflow({peru}: Props) {
       {vista === "pronosticos" && (
         <section className="mlc-content">
           {/* SISMOIA_ML_GLOBAL_OBSERVADO_V1 */}
-{peru ? (
-  <SeismicForecastMap/>
-) : (
-  <section aria-label="Actividad sismica mundial">
-    <div style={{padding: "14px 18px", background: "#eff8fc", borderRadius: 12, marginBottom: 12}}>
-      <strong>Pronóstico probabilístico mundial</strong>
-      <p style={{margin: "5px 0 0", fontSize: 13}}>
-        Probabilidades experimentales por zonas, basadas en el catálogo histórico mundial del USGS.
-      </p>
-    </div>
-    <GlobalForecastMap />
-  </section>
-)}
+<ZoneWorkspace key={peru ? "peru" : "mundo"} peru={peru}/>
         </section>
       )}
 
@@ -132,7 +119,7 @@ export default function MLWorkflow({peru}: Props) {
             <h2>Análisis avanzado</h2>
           </div>
 
-          <ModelsWorkspace/>
+          <ModelsWorkspace peru={peru}/>
 
           <SciencePanels
             modo="modelos"

@@ -37,6 +37,8 @@ class SeismicEvent(Base):
     source_url = Column(Text)
     received_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     review_status = Column(String(30), nullable=False, server_default="unknown")
+    origin_hash = Column(String(64))
+    last_updated_at = Column(DateTime(timezone=True))
     __table_args__ = (UniqueConstraint("source_id", "external_id", name="uq_seismic_source_external"), CheckConstraint("latitude BETWEEN -90 AND 90", name="ck_seismic_latitude"), CheckConstraint("longitude BETWEEN -180 AND 180", name="ck_seismic_longitude"), Index("ix_seismic_date", "occurred_at"), Index("ix_seismic_magnitude", "magnitude"), Index("ix_seismic_coordinates", "latitude", "longitude"))
 
 
@@ -63,6 +65,7 @@ class UserRole(Base):
     assigned_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 from sqlalchemy.dialects.postgresql import JSONB
+from app.request_context import get_correlation_id
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"
@@ -74,4 +77,4 @@ class AuditLog(Base):
     before_json = Column(JSONB)
     after_json = Column(JSONB)
     occurred_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
-    correlation_id = Column(String(120))
+    correlation_id = Column(String(120), default=get_correlation_id)
